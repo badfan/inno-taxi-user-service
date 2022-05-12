@@ -1,16 +1,17 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.16-alpine
+FROM golang:1.16-alpine as builder
 
 WORKDIR /app
 
-COPY go.mod ./
+COPY ./ ./
+
+RUN apk --update add postgresql-client
+RUN apk add --no-cache bash
+
 RUN go mod download
+RUN go build -o /docker-user-service ./cmd/main.go
 
-COPY *.go ./
+RUN chmod +x entrypoint.sh
 
-RUN go build -o /docker-user-service
-
-EXPOSE 8080
-
-CMD [ "/docker-user-service" ]
+CMD ./entrypoint.sh
