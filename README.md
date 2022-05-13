@@ -7,3 +7,4 @@ The service provides functionality to work with users.
     Go 1.18
     Docker
     Docker-compose
+    
