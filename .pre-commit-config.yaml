@@ -10,8 +10,3 @@ repos:
     rev: v1.41.1
     hooks:
     -   id: golangci-lint
-
-exclude-rules:
-    - path: ./data/
-      linters:
-          - golangci-lint
