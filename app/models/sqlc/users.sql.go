@@ -54,30 +54,6 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
 	return err
 }
 
-const getEmailByID = `-- name: GetEmailByID :one
-SELECT email FROM users
-WHERE id = $1
-`
-
-func (q *Queries) GetEmailByID(ctx context.Context, id int32) (string, error) {
-	row := q.db.QueryRowContext(ctx, getEmailByID, id)
-	var email string
-	err := row.Scan(&email)
-	return email, err
-}
-
-const getRatingByID = `-- name: GetRatingByID :one
-SELECT user_rating FROM users
-WHERE id = $1
-`
-
-func (q *Queries) GetRatingByID(ctx context.Context, id int32) (sql.NullFloat64, error) {
-	row := q.db.QueryRowContext(ctx, getRatingByID, id)
-	var user_rating sql.NullFloat64
-	err := row.Scan(&user_rating)
-	return user_rating, err
-}
-
 const getUserByID = `-- name: GetUserByID :one
 SELECT id, user_uuid, name, phone_number, email, password, user_rating, created_at, updated_at FROM users
 WHERE id = $1
@@ -100,6 +76,18 @@ func (q *Queries) GetUserByID(ctx context.Context, id int32) (User, error) {
 	return i, err
 }
 
+const getUserEmailByID = `-- name: GetUserEmailByID :one
+SELECT email FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserEmailByID(ctx context.Context, id int32) (string, error) {
+	row := q.db.QueryRowContext(ctx, getUserEmailByID, id)
+	var email string
+	err := row.Scan(&email)
+	return email, err
+}
+
 const getUserPhoneByID = `-- name: GetUserPhoneByID :one
 SELECT phone_number FROM users
 WHERE id = $1
@@ -110,6 +98,18 @@ func (q *Queries) GetUserPhoneByID(ctx context.Context, id int32) (string, error
 	var phone_number string
 	err := row.Scan(&phone_number)
 	return phone_number, err
+}
+
+const getUserRatingByID = `-- name: GetUserRatingByID :one
+SELECT user_rating FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserRatingByID(ctx context.Context, id int32) (sql.NullFloat64, error) {
+	row := q.db.QueryRowContext(ctx, getUserRatingByID, id)
+	var user_rating sql.NullFloat64
+	err := row.Scan(&user_rating)
+	return user_rating, err
 }
 
 const getUsers = `-- name: GetUsers :many

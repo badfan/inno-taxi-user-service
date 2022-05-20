@@ -26,11 +26,11 @@ WHERE id = $1;
 SELECT phone_number FROM users
 WHERE id = $1;
 
--- name: GetEmailByID :one
+-- name: GetUserEmailByID :one
 SELECT email FROM users
 WHERE id = $1;
 
--- name: GetRatingByID :one
+-- name: GetUserRatingByID :one
 SELECT user_rating FROM users
 WHERE id = $1;
 
