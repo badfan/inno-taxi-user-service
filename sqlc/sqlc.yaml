@@ -1,0 +1,6 @@
+version: "1"
+packages:
+  - path: "../app/models/sqlc/"
+    queries: "users.sql"
+    schema: "/users.sql"
+    emit_json_tags: true
