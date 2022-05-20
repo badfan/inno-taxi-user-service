@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- name: CreatUser :one
+-- name: CreateUser :one
 INSERT INTO users (name, phone_number, email, password)
 VALUES ($1, $2, $3, $4) RETURNING *;
 
@@ -22,7 +22,7 @@ SELECT * FROM users;
 SELECT * FROM users
 WHERE id = $1;
 
--- name: GetPhoneByID :one
+-- name: GetUserPhoneByID :one
 SELECT phone_number FROM users
 WHERE id = $1;
 

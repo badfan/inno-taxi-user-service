@@ -10,20 +10,20 @@ import (
 	"database/sql"
 )
 
-const creatUser = `-- name: CreatUser :one
+const createUser = `-- name: CreateUser :one
 INSERT INTO users (name, phone_number, email, password)
 VALUES ($1, $2, $3, $4) RETURNING id, user_uuid, name, phone_number, email, password, user_rating, created_at, updated_at
 `
 
-type CreatUserParams struct {
+type CreateUserParams struct {
 	Name        string `json:"name"`
 	PhoneNumber string `json:"phone_number"`
 	Email       string `json:"email"`
 	Password    string `json:"password"`
 }
 
-func (q *Queries) CreatUser(ctx context.Context, arg CreatUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, creatUser,
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createUser,
 		arg.Name,
 		arg.PhoneNumber,
 		arg.Email,
@@ -66,18 +66,6 @@ func (q *Queries) GetEmailByID(ctx context.Context, id int32) (string, error) {
 	return email, err
 }
 
-const getPhoneByID = `-- name: GetPhoneByID :one
-SELECT phone_number FROM users
-WHERE id = $1
-`
-
-func (q *Queries) GetPhoneByID(ctx context.Context, id int32) (string, error) {
-	row := q.db.QueryRowContext(ctx, getPhoneByID, id)
-	var phone_number string
-	err := row.Scan(&phone_number)
-	return phone_number, err
-}
-
 const getRatingByID = `-- name: GetRatingByID :one
 SELECT user_rating FROM users
 WHERE id = $1
@@ -110,6 +98,18 @@ func (q *Queries) GetUserByID(ctx context.Context, id int32) (User, error) {
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getUserPhoneByID = `-- name: GetUserPhoneByID :one
+SELECT phone_number FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserPhoneByID(ctx context.Context, id int32) (string, error) {
+	row := q.db.QueryRowContext(ctx, getUserPhoneByID, id)
+	var phone_number string
+	err := row.Scan(&phone_number)
+	return phone_number, err
 }
 
 const getUsers = `-- name: GetUsers :many
