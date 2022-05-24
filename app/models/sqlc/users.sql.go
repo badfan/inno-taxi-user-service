@@ -7,7 +7,6 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -76,6 +75,33 @@ func (q *Queries) GetUserByID(ctx context.Context, id int32) (User, error) {
 	return i, err
 }
 
+const getUserByPhoneAndPassword = `-- name: GetUserByPhoneAndPassword :one
+SELECT id, user_uuid, name, phone_number, email, password, user_rating, created_at, updated_at FROM users
+WHERE phone_number = $1 AND password = $2
+`
+
+type GetUserByPhoneAndPasswordParams struct {
+	PhoneNumber string `json:"phone_number"`
+	Password    string `json:"password"`
+}
+
+func (q *Queries) GetUserByPhoneAndPassword(ctx context.Context, arg GetUserByPhoneAndPasswordParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByPhoneAndPassword, arg.PhoneNumber, arg.Password)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.UserUuid,
+		&i.Name,
+		&i.PhoneNumber,
+		&i.Email,
+		&i.Password,
+		&i.UserRating,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getUserEmailByID = `-- name: GetUserEmailByID :one
 SELECT email FROM users
 WHERE id = $1
@@ -88,16 +114,16 @@ func (q *Queries) GetUserEmailByID(ctx context.Context, id int32) (string, error
 	return email, err
 }
 
-const getUserPhoneByID = `-- name: GetUserPhoneByID :one
-SELECT phone_number FROM users
-WHERE id = $1
+const getUserIDByPhone = `-- name: GetUserIDByPhone :one
+SELECT id FROM users
+WHERE phone_number = $1
 `
 
-func (q *Queries) GetUserPhoneByID(ctx context.Context, id int32) (string, error) {
-	row := q.db.QueryRowContext(ctx, getUserPhoneByID, id)
-	var phone_number string
-	err := row.Scan(&phone_number)
-	return phone_number, err
+func (q *Queries) GetUserIDByPhone(ctx context.Context, phoneNumber string) (int32, error) {
+	row := q.db.QueryRowContext(ctx, getUserIDByPhone, phoneNumber)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const getUserRatingByID = `-- name: GetUserRatingByID :one
@@ -105,9 +131,9 @@ SELECT user_rating FROM users
 WHERE id = $1
 `
 
-func (q *Queries) GetUserRatingByID(ctx context.Context, id int32) (sql.NullFloat64, error) {
+func (q *Queries) GetUserRatingByID(ctx context.Context, id int32) (float32, error) {
 	row := q.db.QueryRowContext(ctx, getUserRatingByID, id)
-	var user_rating sql.NullFloat64
+	var user_rating float32
 	err := row.Scan(&user_rating)
 	return user_rating, err
 }

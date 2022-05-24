@@ -5,20 +5,19 @@
 package sqlc
 
 import (
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type User struct {
-	ID          int32           `json:"id"`
-	UserUuid    uuid.NullUUID   `json:"user_uuid"`
-	Name        string          `json:"name"`
-	PhoneNumber string          `json:"phone_number"`
-	Email       string          `json:"email"`
-	Password    string          `json:"password"`
-	UserRating  sql.NullFloat64 `json:"user_rating"`
-	CreatedAt   time.Time       `json:"created_at"`
-	UpdatedAt   time.Time       `json:"updated_at"`
+	ID          int32     `json:"id"`
+	UserUuid    uuid.UUID `json:"user_uuid"`
+	Name        string    `json:"name"`
+	PhoneNumber string    `json:"phone_number"`
+	Email       string    `json:"email"`
+	Password    string    `json:"password"`
+	UserRating  float32   `json:"user_rating"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
