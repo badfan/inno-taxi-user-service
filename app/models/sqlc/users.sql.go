@@ -130,11 +130,10 @@ const getUserRatingByID = `-- name: GetUserRatingByID :one
 SELECT user_rating FROM users
 WHERE id = $1
 `
-  
+
 func (q *Queries) GetUserRatingByID(ctx context.Context, id int32) (float32, error) {
 	row := q.db.QueryRowContext(ctx, getUserRatingByID, id)
 	var user_rating float32
- 
 	err := row.Scan(&user_rating)
 	return user_rating, err
 }
