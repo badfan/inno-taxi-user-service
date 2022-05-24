@@ -9,3 +9,6 @@ The service provides functionality to work with users.
     Docker-compose
     Sqlc
     Goose
+    Viper
+    Gin
+    Zap
