@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type ServiceI interface {
+type IService interface {
 	SignUp(user sqlc.User) (int, error)
 	SignIn(phone, password string) (string, error)
 	ParseToken(accessToken string) (int, error)
@@ -14,10 +14,10 @@ type ServiceI interface {
 }
 
 type Service struct {
-	resource resources.ResourceI
+	resource resources.IResource
 	logger   *zap.SugaredLogger
 }
 
-func NewService(resource resources.ResourceI, logger *zap.SugaredLogger) *Service {
+func NewService(resource resources.IResource, logger *zap.SugaredLogger) *Service {
 	return &Service{resource: resource, logger: logger}
 }

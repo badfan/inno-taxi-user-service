@@ -46,26 +46,6 @@ func (s *Service) SignIn(phone, password string) (string, error) {
 	return token.SignedString([]byte(signingKey))
 }
 
-func (s *Service) ParseToken(accessToken string) (int, error) {
-	token, err := jwt.ParseWithClaims(accessToken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
-		}
-
-		return []byte(signingKey), nil
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	claims, ok := token.Claims.(*tokenClaims)
-	if !ok {
-		return 0, errors.New("token claims are not of type *tokenClaims")
-	}
-
-	return int(claims.ID), nil
-}
-
 func (s *Service) GetUserRating(id int) (float32, error) {
 	return s.resource.GetUserRatingByID(id)
 }

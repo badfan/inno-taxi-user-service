@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type ResourceI interface {
+type IResource interface {
 	CreateUser(user sqlc.User) (int, error)
 	GetUserIDByPhone(phone string) (int, error)
 	GetUserByPhoneAndPassword(phone, password string) (sqlc.User, error)

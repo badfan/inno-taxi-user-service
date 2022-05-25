@@ -6,10 +6,10 @@ import (
 )
 
 type Handler struct {
-	service services.ServiceI
+	service services.IService
 	logger  *zap.SugaredLogger
 }
 
-func NewHandler(service services.ServiceI, logger *zap.SugaredLogger) *Handler {
+func NewHandler(service services.IService, logger *zap.SugaredLogger) *Handler {
 	return &Handler{service: service, logger: logger}
 }
