@@ -53,28 +53,6 @@ func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
 	return err
 }
 
-const getUserByID = `-- name: GetUserByID :one
-SELECT id, user_uuid, name, phone_number, email, password, user_rating, created_at, updated_at FROM users
-WHERE id = $1
-`
-
-func (q *Queries) GetUserByID(ctx context.Context, id int32) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByID, id)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.UserUuid,
-		&i.Name,
-		&i.PhoneNumber,
-		&i.Email,
-		&i.Password,
-		&i.UserRating,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getUserByPhoneAndPassword = `-- name: GetUserByPhoneAndPassword :one
 SELECT id, user_uuid, name, phone_number, email, password, user_rating, created_at, updated_at FROM users
 WHERE phone_number = $1 AND password = $2
@@ -100,18 +78,6 @@ func (q *Queries) GetUserByPhoneAndPassword(ctx context.Context, arg GetUserByPh
 		&i.UpdatedAt,
 	)
 	return i, err
-}
-
-const getUserEmailByID = `-- name: GetUserEmailByID :one
-SELECT email FROM users
-WHERE id = $1
-`
-
-func (q *Queries) GetUserEmailByID(ctx context.Context, id int32) (string, error) {
-	row := q.db.QueryRowContext(ctx, getUserEmailByID, id)
-	var email string
-	err := row.Scan(&email)
-	return email, err
 }
 
 const getUserIDByPhone = `-- name: GetUserIDByPhone :one

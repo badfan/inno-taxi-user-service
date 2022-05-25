@@ -14,6 +14,7 @@ type ResourceI interface {
 	CreateUser(user sqlc.User) (int, error)
 	GetUserIDByPhone(phone string) (int, error)
 	GetUserByPhoneAndPassword(phone, password string) (sqlc.User, error)
+	GetUserRatingByID(id int) (float32, error)
 }
 
 type Resource struct {

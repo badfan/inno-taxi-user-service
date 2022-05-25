@@ -18,10 +18,6 @@ VALUES ($1, $2, $3, $4) RETURNING *;
 -- name: GetUsers :many
 SELECT * FROM users;
 
--- name: GetUserByID :one
-SELECT * FROM users
-WHERE id = $1;
-
 -- name: GetUserByPhoneAndPassword :one
 SELECT * FROM users
 WHERE phone_number = $1 AND password = $2;
@@ -29,10 +25,6 @@ WHERE phone_number = $1 AND password = $2;
 -- name: GetUserIDByPhone :one
 SELECT id FROM users
 WHERE phone_number = $1;
-
--- name: GetUserEmailByID :one
-SELECT email FROM users
-WHERE id = $1;
 
 -- name: GetUserRatingByID :one
 SELECT user_rating FROM users

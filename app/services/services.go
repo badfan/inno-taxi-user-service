@@ -9,6 +9,8 @@ import (
 type ServiceI interface {
 	SignUp(user sqlc.User) (int, error)
 	SignIn(phone, password string) (string, error)
+	ParseToken(accessToken string) (int, error)
+	GetUserRating(id int) (float32, error)
 }
 
 type Service struct {

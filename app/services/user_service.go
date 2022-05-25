@@ -1,7 +1,7 @@
 package services
 
 import (
-	"fmt"
+	"errors"
 	"github.com/badfan/inno-taxi-user-service/app/models/sqlc"
 	"github.com/dgrijalva/jwt-go"
 	"time"
@@ -13,12 +13,12 @@ const (
 
 type tokenClaims struct {
 	jwt.StandardClaims
-	id int `json:"id"`
+	ID int32 `json:"id"`
 }
 
 func (s *Service) SignUp(user sqlc.User) (int, error) {
 	if _, err := s.resource.GetUserIDByPhone(user.PhoneNumber); err == nil {
-		return 0, fmt.Errorf("phone number is already taken")
+		return 0, errors.New("phone number is already taken")
 	}
 
 	res, err := s.resource.CreateUser(user)
@@ -37,11 +37,35 @@ func (s *Service) SignIn(phone, password string) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(1 * time.Hour).Unix(),
+			ExpiresAt: time.Now().Add(60 * time.Minute).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
-		int(user.ID),
+		user.ID,
 	})
 
 	return token.SignedString([]byte(signingKey))
+}
+
+func (s *Service) ParseToken(accessToken string) (int, error) {
+	token, err := jwt.ParseWithClaims(accessToken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("invalid signing method")
+		}
+
+		return []byte(signingKey), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	claims, ok := token.Claims.(*tokenClaims)
+	if !ok {
+		return 0, errors.New("token claims are not of type *tokenClaims")
+	}
+
+	return int(claims.ID), nil
+}
+
+func (s *Service) GetUserRating(id int) (float32, error) {
+	return s.resource.GetUserRatingByID(id)
 }

@@ -38,8 +38,13 @@ func InitRouter(h *handlers.Handler) *gin.Engine {
 	router.POST("signin", h.SignIn)
 	router.POST("signup", h.SignUp)
 
-	//router.GET("users", h.GetUsers)
-	//router.GET("users/:id", h.GetUser)
+	api := router.Group("/api", h.Middleware)
+	{
+		v1 := api.Group("/v1")
+		{
+			v1.GET("/rating", h.GetUserRating)
+		}
+	}
 
 	return router
 }
