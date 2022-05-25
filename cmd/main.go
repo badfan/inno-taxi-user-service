@@ -6,7 +6,6 @@ import (
 	"github.com/badfan/inno-taxi-user-service/app/resources"
 	"github.com/badfan/inno-taxi-user-service/app/services"
 	"github.com/gin-gonic/gin"
-	"github.com/pingcap/log"
 	"go.uber.org/zap"
 	"net/http"
 	"time"
@@ -53,7 +52,7 @@ func InitLogger() *zap.SugaredLogger {
 
 func main() {
 	logger := InitLogger()
-	defer log.Sync()
+	defer logger.Sync()
 
 	resource, err := resources.NewResource(logger)
 	if err != nil {
