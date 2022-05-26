@@ -1,9 +1,11 @@
 package resources
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
-	"github.com/badfan/inno-taxi-user-service/app/models/sqlc"
+
+	"github.com/badfan/inno-taxi-user-service/app/models"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/pressly/goose/v3"
 	"github.com/spf13/viper"
@@ -11,10 +13,10 @@ import (
 )
 
 type IResource interface {
-	CreateUser(user sqlc.User) (int, error)
-	GetUserIDByPhone(phone string) (int, error)
-	GetUserByPhoneAndPassword(phone, password string) (sqlc.User, error)
-	GetUserRatingByID(id int) (float32, error)
+	CreateUser(ctx context.Context, user *models.User) (int, error)
+	GetUserIDByPhone(ctx context.Context, phone string) (int, error)
+	GetUserByPhoneAndPassword(ctx context.Context, phone, password string) (*models.User, error)
+	GetUserRatingByID(ctx context.Context, id int) (float32, error)
 }
 
 type Resource struct {

@@ -3,12 +3,11 @@ package resources
 import (
 	"context"
 
+	"github.com/badfan/inno-taxi-user-service/app/models"
 	"github.com/badfan/inno-taxi-user-service/app/models/sqlc"
 )
 
-func (r *Resource) CreateUser(user sqlc.User) (int, error) {
-	ctx := context.Background()
-
+func (r *Resource) CreateUser(ctx context.Context, user *models.User) (int, error) {
 	queries := sqlc.New(r.Db)
 
 	res, err := queries.CreateUser(ctx, sqlc.CreateUserParams{
@@ -24,9 +23,7 @@ func (r *Resource) CreateUser(user sqlc.User) (int, error) {
 	return int(res.ID), err
 }
 
-func (r *Resource) GetUserIDByPhone(phone string) (int, error) {
-	ctx := context.Background()
-
+func (r *Resource) GetUserIDByPhone(ctx context.Context, phone string) (int, error) {
 	queries := sqlc.New(r.Db)
 
 	res, err := queries.GetUserIDByPhone(ctx, phone)
@@ -37,12 +34,10 @@ func (r *Resource) GetUserIDByPhone(phone string) (int, error) {
 	return int(res), err
 }
 
-func (r *Resource) GetUserByPhoneAndPassword(phone, password string) (sqlc.User, error) {
-	ctx := context.Background()
-
+func (r *Resource) GetUserByPhoneAndPassword(ctx context.Context, phone, password string) (*models.User, error) {
 	queries := sqlc.New(r.Db)
 
-	res, err := queries.GetUserByPhoneAndPassword(ctx, sqlc.GetUserByPhoneAndPasswordParams{
+	user, err := queries.GetUserByPhoneAndPassword(ctx, sqlc.GetUserByPhoneAndPasswordParams{
 		PhoneNumber: phone,
 		Password:    password,
 	})
@@ -50,12 +45,12 @@ func (r *Resource) GetUserByPhoneAndPassword(phone, password string) (sqlc.User,
 		r.logger.Errorf("error occured while getting user by phone and password: %s", err.Error())
 	}
 
+	res := models.SqlcUserConvert(&user)
+
 	return res, err
 }
 
-func (r *Resource) GetUserRatingByID(id int) (float32, error) {
-	ctx := context.Background()
-
+func (r *Resource) GetUserRatingByID(ctx context.Context, id int) (float32, error) {
 	queries := sqlc.New(r.Db)
 
 	res, err := queries.GetUserRatingByID(ctx, int32(id))

@@ -1,20 +1,21 @@
 package handlers
 
 import (
-	"github.com/badfan/inno-taxi-user-service/app/models/sqlc"
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/badfan/inno-taxi-user-service/app/models"
+	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) SignUp(c *gin.Context) {
-	var input sqlc.User
+	var input models.User
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		h.newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	id, err := h.service.SignUp(input)
+	id, err := h.service.SignUp(c.Request.Context(), &input)
 	if err != nil {
 		h.newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -26,14 +27,14 @@ func (h *Handler) SignUp(c *gin.Context) {
 }
 
 func (h *Handler) SignIn(c *gin.Context) {
-	var input sqlc.User
+	var input models.User
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		h.newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	token, err := h.service.SignIn(input.PhoneNumber, input.Password)
+	token, err := h.service.SignIn(c.Request.Context(), input.PhoneNumber, input.Password)
 	if err != nil {
 		h.newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -57,7 +58,7 @@ func (h *Handler) GetUserRating(c *gin.Context) {
 		return
 	}
 
-	rating, err := h.service.GetUserRating(conID)
+	rating, err := h.service.GetUserRating(c.Request.Context(), conID)
 	if err != nil {
 		h.newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

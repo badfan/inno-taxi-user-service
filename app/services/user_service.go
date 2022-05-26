@@ -1,13 +1,18 @@
 package services
 
 import (
+	"context"
+	"crypto/sha1"
 	"errors"
-	"github.com/badfan/inno-taxi-user-service/app/models/sqlc"
-	"github.com/dgrijalva/jwt-go"
+	"fmt"
 	"time"
+
+	"github.com/badfan/inno-taxi-user-service/app/models"
+	"github.com/dgrijalva/jwt-go"
 )
 
 const (
+	hashSalt   = "jfkdsfjhs16743v213fdskjf"
 	signingKey = "daf#dfs@23df$321h7931g!4"
 )
 
@@ -16,12 +21,14 @@ type tokenClaims struct {
 	ID int32 `json:"id"`
 }
 
-func (s *Service) SignUp(user sqlc.User) (int, error) {
-	if _, err := s.resource.GetUserIDByPhone(user.PhoneNumber); err == nil {
+func (s *Service) SignUp(ctx context.Context, user *models.User) (int, error) {
+	if _, err := s.resource.GetUserIDByPhone(ctx, user.PhoneNumber); err == nil {
 		return 0, errors.New("phone number is already taken")
 	}
 
-	res, err := s.resource.CreateUser(user)
+	user.Password = generatePasswordHash(user.Password)
+
+	res, err := s.resource.CreateUser(ctx, user)
 	if err != nil {
 		return 0, err
 	}
@@ -29,8 +36,8 @@ func (s *Service) SignUp(user sqlc.User) (int, error) {
 	return res, err
 }
 
-func (s *Service) SignIn(phone, password string) (string, error) {
-	user, err := s.resource.GetUserByPhoneAndPassword(phone, password)
+func (s *Service) SignIn(ctx context.Context, phone, password string) (string, error) {
+	user, err := s.resource.GetUserByPhoneAndPassword(ctx, phone, password)
 	if err != nil {
 		return "", err
 	}
@@ -46,6 +53,13 @@ func (s *Service) SignIn(phone, password string) (string, error) {
 	return token.SignedString([]byte(signingKey))
 }
 
-func (s *Service) GetUserRating(id int) (float32, error) {
-	return s.resource.GetUserRatingByID(id)
+func (s *Service) GetUserRating(ctx context.Context, id int) (float32, error) {
+	return s.resource.GetUserRatingByID(ctx, id)
+}
+
+func generatePasswordHash(password string) string {
+	hash := sha1.New()
+	hash.Write([]byte(password))
+
+	return fmt.Sprintf("%x", hash.Sum([]byte(hashSalt)))
 }

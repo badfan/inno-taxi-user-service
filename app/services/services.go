@@ -1,16 +1,18 @@
 package services
 
 import (
-	"github.com/badfan/inno-taxi-user-service/app/models/sqlc"
+	"context"
+
+	"github.com/badfan/inno-taxi-user-service/app/models"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
 	"go.uber.org/zap"
 )
 
 type IService interface {
-	SignUp(user sqlc.User) (int, error)
-	SignIn(phone, password string) (string, error)
+	SignUp(ctx context.Context, user *models.User) (int, error)
+	SignIn(ctx context.Context, phone, password string) (string, error)
 	ParseToken(accessToken string) (int, error)
-	GetUserRating(id int) (float32, error)
+	GetUserRating(ctx context.Context, id int) (float32, error)
 }
 
 type Service struct {

@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
+	"net/http"
+	"time"
+
 	"github.com/badfan/inno-taxi-user-service/app/api"
-	"github.com/badfan/inno-taxi-user-service/app/api/v1"
+	v1 "github.com/badfan/inno-taxi-user-service/app/api/v1"
 	"github.com/badfan/inno-taxi-user-service/app/handlers"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
 	"github.com/badfan/inno-taxi-user-service/app/services"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 type Server struct {
