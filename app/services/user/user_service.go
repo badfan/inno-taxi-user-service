@@ -5,12 +5,14 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
+
+	"github.com/badfan/inno-taxi-user-service/app"
 
 	"github.com/badfan/inno-taxi-user-service/app/models"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/spf13/viper"
+	"github.com/dgrijalva/jwt-go" //nolint:typecheck
 	"go.uber.org/zap"
 )
 
@@ -26,12 +28,13 @@ type IUserService interface {
 }
 
 type UserService struct {
-	resource resources.IResource
-	logger   *zap.SugaredLogger
+	resource  resources.IResource
+	apiConfig *app.APIConfig
+	logger    *zap.SugaredLogger
 }
 
-func NewUserService(resource resources.IResource, logger *zap.SugaredLogger) *UserService {
-	return &UserService{resource: resource, logger: logger}
+func NewUserService(resource resources.IResource, apiConfig *app.APIConfig, logger *zap.SugaredLogger) *UserService {
+	return &UserService{resource: resource, apiConfig: apiConfig, logger: logger}
 }
 
 type TokenClaims struct {
@@ -55,13 +58,14 @@ func (s *UserService) SignUp(ctx context.Context, user *models.User) (int, error
 }
 
 func (s *UserService) SignIn(ctx context.Context, phone, password string) (string, error) {
+	password = generatePasswordHash(password)
+
 	user, err := s.resource.GetUserByPhoneAndPassword(ctx, phone, password)
 	if err != nil {
 		return "", err
 	}
 
-	viper.AutomaticEnv()
-	tokenTTL := viper.Get("TOKENTTL").(int)
+	tokenTTL, _ := strconv.ParseInt(s.apiConfig.TokenTTL, 10, 64)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &TokenClaims{ //nolint:typecheck
 		StandardClaims: jwt.StandardClaims{ //nolint:typecheck

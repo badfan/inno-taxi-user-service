@@ -5,14 +5,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/badfan/inno-taxi-user-service/app/services/auth"
-	"github.com/badfan/inno-taxi-user-service/app/services/user"
-	"github.com/spf13/viper"
+	"github.com/badfan/inno-taxi-user-service/app"
 
 	"github.com/badfan/inno-taxi-user-service/app/api"
 	v1 "github.com/badfan/inno-taxi-user-service/app/api/v1"
 	"github.com/badfan/inno-taxi-user-service/app/handlers"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
+	"github.com/badfan/inno-taxi-user-service/app/services/auth"
+	"github.com/badfan/inno-taxi-user-service/app/services/user"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -58,23 +58,29 @@ func main() {
 	logger := InitLogger()
 	defer logger.Sync()
 
-	resource, err := resources.NewResource(logger)
+	apiConfig, err := app.NewAPIConfig()
+	if err != nil {
+		logger.Errorf("apiconfig error: %s", err.Error())
+	}
+	dbConfig, err := app.NewDBConfig()
+	if err != nil {
+		logger.Errorf("dbconfig error: %s", err.Error())
+	}
+
+	resource, err := resources.NewResource(dbConfig, logger)
 	if err != nil {
 		logger.Fatalf("db error: %s", err.Error())
 	}
 	defer resource.Db.Close()
 
 	authService := auth.NewAuthenticationService(resource, logger)
-	userService := user.NewUserService(resource, logger)
+	userService := user.NewUserService(resource, apiConfig, logger)
 	handler := handlers.NewHandler(authService, userService, logger)
 
 	router := InitRouter(handler)
 
-	viper.AutomaticEnv()
-	serverPort := viper.Get("SERVERPORT").(string)
-
 	server := new(Server)
-	if err := server.Run(router, serverPort); err != nil {
+	if err := server.Run(router, apiConfig.APIPort); err != nil {
 		logger.Fatalf("error occured while running http server: %s", err.Error())
 	}
 }

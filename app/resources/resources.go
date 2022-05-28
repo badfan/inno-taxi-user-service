@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/badfan/inno-taxi-user-service/app"
+
 	"github.com/badfan/inno-taxi-user-service/app/models"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/pressly/goose/v3" //nolint:typecheck
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -24,12 +25,9 @@ type Resource struct {
 	logger *zap.SugaredLogger
 }
 
-func NewResource(logger *zap.SugaredLogger) (*Resource, error) {
-	viper.AutomaticEnv()
-
+func NewResource(dbConfig *app.DBConfig, logger *zap.SugaredLogger) (*Resource, error) {
 	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		viper.Get("DBHOST"), viper.Get("DBPORT"), viper.Get("DBUSER"), viper.Get("DBPASSWORD"),
-		viper.Get("DBNAME"), viper.Get("SSLMODE"))
+		dbConfig.DBHost, dbConfig.DBPort, dbConfig.DBUser, dbConfig.DBPassword, dbConfig.DBName, dbConfig.SSLMode)
 
 	db, err := goose.OpenDBWithDriver("pgx", connStr) //nolint:typecheck
 	if err != nil {
