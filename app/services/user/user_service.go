@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/badfan/inno-taxi-user-service/app"
@@ -65,11 +64,9 @@ func (s *UserService) SignIn(ctx context.Context, phone, password string) (strin
 		return "", err
 	}
 
-	tokenTTL, _ := strconv.ParseInt(s.apiConfig.TokenTTL, 10, 64)
-
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &TokenClaims{ //nolint:typecheck
 		StandardClaims: jwt.StandardClaims{ //nolint:typecheck
-			ExpiresAt: time.Now().Add(time.Duration(tokenTTL) * time.Hour).Unix(),
+			ExpiresAt: time.Now().Add(time.Duration(s.apiConfig.TokenTTL) * time.Hour).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},
 		ID: user.ID,

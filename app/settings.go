@@ -2,13 +2,14 @@ package app
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/spf13/viper"
 )
 
 type APIConfig struct {
 	APIPort  string
-	TokenTTL string
+	TokenTTL int64
 }
 
 type DBConfig struct {
@@ -29,10 +30,12 @@ func NewAPIConfig() (*APIConfig, error) {
 		return nil, errors.New("env var APIPORT is empty")
 	}
 
-	res.TokenTTL = viper.Get("TOKENTTL").(string)
-	if res.TokenTTL == "" {
-		return nil, errors.New("env var TOKENTTL is empty")
+	tokenTTL := viper.Get("TOKENTTL").(string)
+	token, err := strconv.ParseInt(tokenTTL, 10, 64)
+	if err != nil {
+		return nil, errors.New("error with env var TOKENTTL")
 	}
+	res.TokenTTL = token
 
 	return res, nil
 }
