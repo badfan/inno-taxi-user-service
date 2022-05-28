@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -23,9 +24,10 @@ func (h *Handler) Middleware(c *gin.Context) {
 		return
 	}
 
-	id, err := h.service.ParseToken(headerParts[1])
+	id, err := h.authService.ParseToken(headerParts[1])
 	if err != nil {
 		h.newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return
 	}
 
 	c.Set("userID", id)

@@ -15,7 +15,7 @@ func (h *Handler) SignUp(c *gin.Context) {
 		return
 	}
 
-	id, err := h.service.SignUp(c.Request.Context(), &input)
+	id, err := h.userService.SignUp(c.Request.Context(), &input)
 	if err != nil {
 		h.newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -34,7 +34,7 @@ func (h *Handler) SignIn(c *gin.Context) {
 		return
 	}
 
-	token, err := h.service.SignIn(c.Request.Context(), input.PhoneNumber, input.Password)
+	token, err := h.userService.SignIn(c.Request.Context(), input.PhoneNumber, input.Password)
 	if err != nil {
 		h.newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -58,7 +58,7 @@ func (h *Handler) GetUserRating(c *gin.Context) {
 		return
 	}
 
-	rating, err := h.service.GetUserRating(c.Request.Context(), conID)
+	rating, err := h.userService.GetUserRating(c.Request.Context(), conID)
 	if err != nil {
 		h.newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

@@ -5,11 +5,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/badfan/inno-taxi-user-service/app/services/auth"
+	"github.com/badfan/inno-taxi-user-service/app/services/user"
+	"github.com/spf13/viper"
+
 	"github.com/badfan/inno-taxi-user-service/app/api"
 	v1 "github.com/badfan/inno-taxi-user-service/app/api/v1"
 	"github.com/badfan/inno-taxi-user-service/app/handlers"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
-	"github.com/badfan/inno-taxi-user-service/app/services"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -61,13 +64,17 @@ func main() {
 	}
 	defer resource.Db.Close()
 
-	service := services.NewService(resource, logger)
-	handler := handlers.NewHandler(service, logger)
+	authService := auth.NewAuthenticationService(resource, logger)
+	userService := user.NewUserService(resource, logger)
+	handler := handlers.NewHandler(authService, userService, logger)
 
 	router := InitRouter(handler)
 
+	viper.AutomaticEnv()
+	serverPort := viper.Get("SERVERPORT").(string)
+
 	server := new(Server)
-	if err := server.Run(router, "8080"); err != nil {
+	if err := server.Run(router, serverPort); err != nil {
 		logger.Fatalf("error occured while running http server: %s", err.Error())
 	}
 }

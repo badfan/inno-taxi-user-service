@@ -7,7 +7,7 @@ import (
 
 	"github.com/badfan/inno-taxi-user-service/app/models"
 	_ "github.com/jackc/pgx/v4/stdlib"
-	"github.com/pressly/goose/v3"
+	"github.com/pressly/goose/v3" //nolint:typecheck
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -31,14 +31,14 @@ func NewResource(logger *zap.SugaredLogger) (*Resource, error) {
 		viper.Get("DBHOST"), viper.Get("DBPORT"), viper.Get("DBUSER"), viper.Get("DBPASSWORD"),
 		viper.Get("DBNAME"), viper.Get("SSLMODE"))
 
-	db, err := goose.OpenDBWithDriver("pgx", connStr)
+	db, err := goose.OpenDBWithDriver("pgx", connStr) //nolint:typecheck
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info("Migration start")
 
-	err = goose.Up(db, "./migrations/")
+	err = goose.Up(db, "./migrations/") //nolint:typecheck
 	if err != nil {
 		return nil, err
 	}

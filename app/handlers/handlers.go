@@ -1,15 +1,17 @@
 package handlers
 
 import (
-	"github.com/badfan/inno-taxi-user-service/app/services"
+	"github.com/badfan/inno-taxi-user-service/app/services/auth"
+	"github.com/badfan/inno-taxi-user-service/app/services/user"
 	"go.uber.org/zap"
 )
 
 type Handler struct {
-	service services.IService
-	logger  *zap.SugaredLogger
+	authService auth.IAuthenticationService
+	userService user.IUserService
+	logger      *zap.SugaredLogger
 }
 
-func NewHandler(service services.IService, logger *zap.SugaredLogger) *Handler {
-	return &Handler{service: service, logger: logger}
+func NewHandler(authService auth.IAuthenticationService, userService user.IUserService, logger *zap.SugaredLogger) *Handler {
+	return &Handler{authService: authService, userService: userService, logger: logger}
 }
