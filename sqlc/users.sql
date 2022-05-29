@@ -1,12 +1,12 @@
 CREATE TABLE IF NOT EXISTS users
 (
     id SERIAL PRIMARY KEY,
-    user_uuid uuid DEFAULT uuid_generate_v4 (),
+    user_uuid uuid NOT NULL DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     phone_number VARCHAR(25) UNIQUE NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    user_rating REAL,
+    user_rating REAL NOT NULL DEFAULT 0.0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -18,17 +18,13 @@ VALUES ($1, $2, $3, $4) RETURNING *;
 -- name: GetUsers :many
 SELECT * FROM users;
 
--- name: GetUserByID :one
+-- name: GetUserByPhoneAndPassword :one
 SELECT * FROM users
-WHERE id = $1;
+WHERE phone_number = $1 AND password = $2;
 
--- name: GetUserPhoneByID :one
-SELECT phone_number FROM users
-WHERE id = $1;
-
--- name: GetUserEmailByID :one
-SELECT email FROM users
-WHERE id = $1;
+-- name: GetUserIDByPhone :one
+SELECT id FROM users
+WHERE phone_number = $1;
 
 -- name: GetUserRatingByID :one
 SELECT user_rating FROM users
