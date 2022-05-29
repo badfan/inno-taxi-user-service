@@ -2,14 +2,13 @@ package app
 
 import (
 	"errors"
-	"strconv"
 
 	"github.com/spf13/viper"
 )
 
 type APIConfig struct {
 	APIPort  string
-	TokenTTL int64
+	TokenTTL int
 }
 
 type DBConfig struct {
@@ -25,17 +24,15 @@ func NewAPIConfig() (*APIConfig, error) {
 	res := &APIConfig{}
 	viper.AutomaticEnv()
 
-	res.APIPort = viper.Get("APIPORT").(string)
-	if res.APIPort == "" {
+	if !viper.IsSet("APIPORT") {
 		return nil, errors.New("env var APIPORT is empty")
 	}
+	res.APIPort = viper.GetString("APIPORT")
 
-	tokenTTL := viper.Get("TOKENTTL").(string)
-	token, err := strconv.ParseInt(tokenTTL, 10, 64)
-	if err != nil {
-		return nil, errors.New("error with env var TOKENTTL")
+	if !viper.IsSet("TOKENTTL") {
+		return nil, errors.New("env var TOKENTTL is empty")
 	}
-	res.TokenTTL = token
+	res.TokenTTL = viper.GetInt("TOKENTTL")
 
 	return res, nil
 }
@@ -44,35 +41,35 @@ func NewDBConfig() (*DBConfig, error) {
 	res := &DBConfig{}
 	viper.AutomaticEnv()
 
-	res.DBUser = viper.Get("DBUSER").(string)
-	if res.DBUser == "" {
+	if !viper.IsSet("DBUSER") {
 		return nil, errors.New("env var DBUSER is empty")
 	}
+	res.DBUser = viper.GetString("DBUSER")
 
-	res.DBPassword = viper.Get("DBPASSWORD").(string)
-	if res.DBPassword == "" {
+	if !viper.IsSet("DBPASSWORD") {
 		return nil, errors.New("env var DBPASSWORD is empty")
 	}
+	res.DBPassword = viper.GetString("DBPASSWORD")
 
-	res.DBHost = viper.Get("DBHOST").(string)
-	if res.DBHost == "" {
+	if !viper.IsSet("DBHOST") {
 		return nil, errors.New("env var DBHOST is empty")
 	}
+	res.DBHost = viper.GetString("DBHOST")
 
-	res.DBPort = viper.Get("DBPORT").(string)
-	if res.DBPort == "" {
+	if !viper.IsSet("DBPORT") {
 		return nil, errors.New("env var DBPORT is empty")
 	}
+	res.DBPort = viper.GetString("DBPORT")
 
-	res.DBName = viper.Get("DBNAME").(string)
-	if res.DBName == "" {
+	if !viper.IsSet("DBNAME") {
 		return nil, errors.New("env var DBNAME is empty")
 	}
+	res.DBName = viper.GetString("DBNAME")
 
-	res.SSLMode = viper.Get("SSLMODE").(string)
-	if res.SSLMode == "" {
+	if !viper.IsSet("SSLMODE") {
 		return nil, errors.New("env var SSLMODE is empty")
 	}
+	res.SSLMode = viper.GetString("SSLMODE")
 
 	return res, nil
 }
