@@ -1,16 +1,18 @@
-package user //nolint:typecheck
+package user
 
 import (
 	"context"
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/badfan/inno-taxi-user-service/app"
-
 	"github.com/badfan/inno-taxi-user-service/app/models"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
+	"github.com/badfan/inno-taxi-user-service/app/services/proto"
+	pb "github.com/badfan/inno-taxi-user-service/app/services/proto"
 	"github.com/dgrijalva/jwt-go" //nolint:typecheck
 	"go.uber.org/zap"
 )
@@ -24,16 +26,20 @@ type IUserService interface {
 	SignUp(ctx context.Context, user *models.User) (int, error)
 	SignIn(ctx context.Context, phone, password string) (string, error)
 	GetUserRating(ctx context.Context, id int) (float32, error)
+	SetDriverRating(ctx context.Context, rating int) error
+	GetOrderHistory(ctx context.Context, id int) ([]*pb.Order, error)
+	GetTaxi(ctx context.Context, id int, origin, destination, taxiType string) (*pb.GetTaxiForUserResponse, error)
 }
 
 type UserService struct {
-	resource  resources.IResource
-	apiConfig *app.APIConfig
-	logger    *zap.SugaredLogger
+	resource   resources.IResource
+	grpcClient proto.OrderServiceClient
+	apiConfig  *app.APIConfig
+	logger     *zap.SugaredLogger
 }
 
-func NewUserService(resource resources.IResource, apiConfig *app.APIConfig, logger *zap.SugaredLogger) *UserService {
-	return &UserService{resource: resource, apiConfig: apiConfig, logger: logger}
+func NewUserService(resource resources.IResource, grpcClient proto.OrderServiceClient, apiConfig *app.APIConfig, logger *zap.SugaredLogger) *UserService {
+	return &UserService{resource: resource, grpcClient: grpcClient, apiConfig: apiConfig, logger: logger}
 }
 
 type TokenClaims struct {
@@ -77,6 +83,57 @@ func (s *UserService) SignIn(ctx context.Context, phone, password string) (strin
 
 func (s *UserService) GetUserRating(ctx context.Context, id int) (float32, error) {
 	return s.resource.GetUserRatingByID(ctx, id)
+}
+
+func (s *UserService) SetDriverRating(ctx context.Context, rating int) error {
+	_, err := s.grpcClient.SetDriverRating(ctx, &proto.SetDriverRatingRequest{Rating: int32(rating)})
+	return err
+}
+
+func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]*pb.Order, error) {
+	uuid, err := s.resource.GetUserUUIDByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	stream, err := s.grpcClient.GetOrderHistory(ctx, &proto.GetOrderHistoryRequest{Uuid: uuid.String()})
+	if err != nil {
+		return nil, err
+	}
+
+	var orderHistory []*pb.Order
+	for {
+		order, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		orderHistory = append(orderHistory, order)
+	}
+
+	return orderHistory, nil
+}
+
+func (s *UserService) GetTaxi(ctx context.Context, id int, origin, destination, taxiType string) (*pb.GetTaxiForUserResponse, error) {
+	userUUID, rating, err := s.resource.GetUserUUIDAndRatingByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	driverInfo, err := s.grpcClient.GetTaxiForUser(ctx, &pb.GetTaxiForUserRequest{
+		UserUuid:    userUUID.String(),
+		UserRating:  rating,
+		Origin:      origin,
+		Destination: destination,
+		TaxiType:    taxiType,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return driverInfo, nil
 }
 
 func generatePasswordHash(password string) string {

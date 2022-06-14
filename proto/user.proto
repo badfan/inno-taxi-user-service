@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/badfan/inno-taxi-user-service";
+
+message Order {
+  string user_uuid = 2;
+  string driver_uuid = 3;
+  string origin = 4;
+  string destination = 5;
+  string taxi_type = 6;
+  string date = 9;
+  string duration = 10;
+}
+
+message SetDriverRatingRequest {
+  int32 rating = 1;
+}
+
+message SetUserRatingRequest {
+  int32 rating = 1;
+}
+
+message EmptyResponse {}
+
+message GetTaxiForUserRequest{
+  string user_uuid = 1;
+  string origin = 2;
+  string destination = 3;
+  string taxi_type = 4;
+  float user_rating = 5;
+}
+
+message GetTaxiForUserResponse {
+  string driver_uuid = 1;
+  float driver_rating = 2;
+}
+
+message GetOrderForDriverRequest {
+  string driver_uuid = 1;
+  string taxi_type = 2;
+  float driver_rating = 3;
+}
+
+message GetOrderForDriverResponse {
+  string user_uuid = 1;
+  string origin = 2;
+  string destination = 3;
+  float user_rating = 4;
+}
+
+message GetOrderHistoryRequest {
+  string uuid = 1;
+}
+
+service OrderService {
+  rpc SetDriverRating (SetDriverRatingRequest) returns (EmptyResponse) {}
+  rpc SetUserRating (SetUserRatingRequest) returns (EmptyResponse) {}
+  rpc GetTaxiForUser (GetTaxiForUserRequest) returns (GetTaxiForUserResponse) {}
+  rpc GetOrderForDriver (GetOrderForDriverRequest) returns (GetOrderForDriverResponse) {}
+  rpc GetOrderHistory (GetOrderHistoryRequest) returns (stream Order) {}
+}

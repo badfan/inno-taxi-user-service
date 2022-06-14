@@ -5,6 +5,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/badfan/inno-taxi-user-service/app/services/user"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"github.com/badfan/inno-taxi-user-service/app"
 
 	"github.com/badfan/inno-taxi-user-service/app/api"
@@ -12,7 +16,7 @@ import (
 	"github.com/badfan/inno-taxi-user-service/app/handlers"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
 	"github.com/badfan/inno-taxi-user-service/app/services/auth"
-	"github.com/badfan/inno-taxi-user-service/app/services/user"
+	pb "github.com/badfan/inno-taxi-user-service/app/services/proto"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -54,6 +58,18 @@ func InitRouter(handler *handlers.Handler) *gin.Engine {
 	return router
 }
 
+func InitGRPC(apiConfig *app.APIConfig, logger *zap.SugaredLogger) *grpc.ClientConn {
+	var options []grpc.DialOption
+	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.Dial("localhost:"+apiConfig.RPCPort, options...)
+	if err != nil {
+		logger.Fatalf("error occured while connecting to GRPC server: %s", err.Error())
+	}
+
+	return conn
+}
+
 func main() {
 	logger := InitLogger()
 	defer logger.Sync()
@@ -73,8 +89,12 @@ func main() {
 	}
 	defer resource.Db.Close()
 
+	grpcClientConn := InitGRPC(apiConfig, logger)
+	defer grpcClientConn.Close()
+	client := pb.NewOrderServiceClient(grpcClientConn)
+
 	authService := auth.NewAuthenticationService(resource, logger)
-	userService := user.NewUserService(resource, apiConfig, logger)
+	userService := user.NewUserService(resource, client, apiConfig, logger)
 	handler := handlers.NewHandler(authService, userService, logger)
 
 	router := InitRouter(handler)

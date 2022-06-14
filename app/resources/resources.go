@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/badfan/inno-taxi-user-service/app"
 
 	"github.com/badfan/inno-taxi-user-service/app/models"
@@ -18,6 +20,8 @@ type IResource interface {
 	GetUserIDByPhone(ctx context.Context, phone string) (int, error)
 	GetUserByPhoneAndPassword(ctx context.Context, phone, password string) (*models.User, error)
 	GetUserRatingByID(ctx context.Context, id int) (float32, error)
+	GetUserUUIDByID(ctx context.Context, id int) (uuid.UUID, error)
+	GetUserUUIDAndRatingByID(ctx context.Context, id int) (uuid.UUID, float32, error)
 }
 
 type Resource struct {

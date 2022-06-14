@@ -8,6 +8,7 @@ import (
 
 type APIConfig struct {
 	APIPort  string
+	RPCPort  string
 	TokenTTL int
 }
 
@@ -28,6 +29,11 @@ func NewAPIConfig() (*APIConfig, error) {
 		return nil, errors.New("env var APIPORT is empty")
 	}
 	res.APIPort = viper.GetString("APIPORT")
+
+	if !viper.IsSet("RPCPORT") {
+		return nil, errors.New("env var RPCPORT is empty")
+	}
+	res.RPCPort = viper.GetString("RPCPORT")
 
 	if !viper.IsSet("TOKENTTL") {
 		return nil, errors.New("env var TOKENTTL is empty")

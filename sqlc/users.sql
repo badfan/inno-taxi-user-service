@@ -30,6 +30,14 @@ WHERE phone_number = $1;
 SELECT user_rating FROM users
 WHERE id = $1;
 
+-- name: GetUserUUIDByID :one
+SELECT user_uuid FROM users
+WHERE id = $1;
+
+-- name: GetUserUUIDAndRatingByID :one
+SELECT user_uuid, user_rating FROM users
+WHERE id = $1;
+
 -- name: UpdateUser :one
 UPDATE users
 SET name = $1, phone_number = $2, email = $3, password= $4

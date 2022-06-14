@@ -3,8 +3,9 @@ package auth //nolint:typecheck
 import (
 	"errors"
 
-	"github.com/badfan/inno-taxi-user-service/app/resources"
 	"github.com/badfan/inno-taxi-user-service/app/services/user"
+
+	"github.com/badfan/inno-taxi-user-service/app/resources"
 	"github.com/dgrijalva/jwt-go" //nolint:typecheck
 	"go.uber.org/zap"
 )
