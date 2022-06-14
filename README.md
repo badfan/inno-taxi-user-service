@@ -12,3 +12,4 @@ The service provides functionality to work with users.
     Viper
     Gin
     Zap
+    GRPC
