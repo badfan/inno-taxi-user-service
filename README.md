@@ -13,3 +13,4 @@ The service provides functionality to work with users.
     Gin
     Zap
     GRPC
+    Swagger

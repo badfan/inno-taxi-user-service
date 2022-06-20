@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"database/sql"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/badfan/inno-taxi-user-service/app/apperrors"
@@ -35,14 +34,14 @@ type IUserService interface {
 }
 
 type UserService struct {
-	resource   resources.IResource
-	grpcClient proto.OrderServiceClient
-	apiConfig  *app.APIConfig
-	logger     *zap.SugaredLogger
+	resource     resources.IResource
+	orderService proto.OrderServiceClient
+	apiConfig    *app.APIConfig
+	logger       *zap.SugaredLogger
 }
 
-func NewUserService(resource resources.IResource, grpcClient proto.OrderServiceClient, apiConfig *app.APIConfig, logger *zap.SugaredLogger) *UserService {
-	return &UserService{resource: resource, grpcClient: grpcClient, apiConfig: apiConfig, logger: logger}
+func NewUserService(resource resources.IResource, orderService proto.OrderServiceClient, apiConfig *app.APIConfig, logger *zap.SugaredLogger) *UserService {
+	return &UserService{resource: resource, orderService: orderService, apiConfig: apiConfig, logger: logger}
 }
 
 type TokenClaims struct {
@@ -59,7 +58,7 @@ func (s *UserService) SignUp(ctx context.Context, user *models.User) (int, error
 
 	res, err := s.resource.CreateUser(ctx, user)
 	if err != nil {
-		return 0, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while creating user: %s", err.Error())
+		return 0, errors.Wrapf(err, "error occurred while creating user")
 	}
 
 	return res, err
@@ -70,15 +69,11 @@ func (s *UserService) SignIn(ctx context.Context, phone, password string) (strin
 
 	user, err := s.resource.GetUserByPhoneAndPassword(ctx, phone, password)
 	if err != nil {
-		var apperr error
-		switch err {
-		case sql.ErrNoRows:
-			apperr = apperrors.ErrNotFound
-		default:
-			apperr = apperrors.ErrInternalServer
+		if err == sql.ErrNoRows {
+			return "", errors.Wrapf(apperrors.ErrNotFound,
+				"error occurred while verifying phone number and password: %s", err.Error())
 		}
-		return "", errors.Wrapf(apperr,
-			"error occurred while verifying phone number and password: %s", err.Error())
+		return "", errors.Wrap(err, "error occurred while verifying phone number and password")
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &TokenClaims{ //nolint:typecheck
@@ -95,43 +90,33 @@ func (s *UserService) SignIn(ctx context.Context, phone, password string) (strin
 func (s *UserService) GetUserRating(ctx context.Context, id int) (float32, error) {
 	user, err := s.resource.GetUserRatingByID(ctx, id)
 	if err != nil {
-		return 0, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting user rating: %s", err.Error())
+		return 0, errors.Wrap(err, "error occurred while getting user rating")
 	}
+
 	return user, nil
 }
 
 func (s *UserService) SetDriverRating(ctx context.Context, rating int) error {
-	_, err := s.grpcClient.SetDriverRating(ctx, &proto.SetDriverRatingRequest{Rating: int32(rating)})
+	_, err := s.orderService.SetDriverRating(ctx, &proto.SetDriverRatingRequest{Rating: int32(rating)})
 	if err != nil {
-		return errors.Wrapf(apperrors.ErrInternalServer, "error occurred while setting driver rating: %s", err.Error())
+		return errors.Wrap(err, "error occurred while setting driver rating")
 	}
+
 	return nil
 }
 
 func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]string, error) {
 	uuid, err := s.resource.GetUserUUIDByID(ctx, id)
 	if err != nil {
-		return nil, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting user UUID: %s", err.Error())
+		return nil, errors.Wrap(err, "error occurred while getting user UUID")
 	}
 
-	stream, err := s.grpcClient.GetOrderHistory(ctx, &proto.GetOrderHistoryRequest{Uuid: uuid.String()})
+	ordersResponse, err := s.orderService.GetOrderHistory(ctx, &proto.GetOrderHistoryRequest{Uuid: uuid.String()})
 	if err != nil {
-		return nil, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting grpc stream: %s", err.Error())
-
+		return nil, errors.Wrap(err, "error occurred while orders history from grpc server")
 	}
 
-	var orderHistory []string
-	for {
-		order, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting orders from stream: %s", err.Error())
-		}
-		convertedOrder := grpcOrderConvert(order)
-		orderHistory = append(orderHistory, convertedOrder)
-	}
+	orderHistory := grpcOrdersConvert(ordersResponse.Orders)
 
 	return orderHistory, nil
 }
@@ -139,10 +124,10 @@ func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]string, er
 func (s *UserService) FindTaxi(ctx context.Context, id int, origin, destination, taxiType string) (string, float32, error) {
 	userUUID, rating, err := s.resource.GetUserUUIDAndRatingByID(ctx, id)
 	if err != nil {
-		return "", 0, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting user UUID and rating: %s", err.Error())
+		return "", 0, errors.Wrap(err, "error occurred while getting user UUID and rating")
 	}
 
-	driverInfo, err := s.grpcClient.GetTaxiForUser(ctx, &pb.GetTaxiForUserRequest{
+	driverInfo, err := s.orderService.GetTaxiForUser(ctx, &pb.GetTaxiForUserRequest{
 		UserUuid:    userUUID.String(),
 		UserRating:  rating,
 		Origin:      origin,
@@ -150,7 +135,7 @@ func (s *UserService) FindTaxi(ctx context.Context, id int, origin, destination,
 		TaxiType:    taxiType,
 	})
 	if err != nil {
-		return "", 0, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while finding taxi: %s", err.Error())
+		return "", 0, errors.Wrap(err, "error occurred while finding taxi")
 	}
 
 	return driverInfo.GetDriverUuid(), driverInfo.GetDriverRating(), nil
@@ -163,8 +148,12 @@ func generatePasswordHash(password string) string {
 	return fmt.Sprintf("%x", hash.Sum([]byte(hashSalt)))
 }
 
-func grpcOrderConvert(source *pb.Order) string {
-	return fmt.Sprintf("User UUID: %s\nDriver UUID: %s\nOrigin: %s\nDestination: %s\nTaxi type: %s\nDate: %s\n"+
-		"Duration: %s", source.GetUserUuid(), source.GetDriverUuid(), source.GetOrigin(), source.GetDestination(),
-		source.GetTaxiType(), source.GetDate(), source.GetDuration())
+func grpcOrdersConvert(source []*pb.Order) []string {
+	var orders []string
+	for _, item := range source {
+		orders = append(orders, fmt.Sprintf("User UUID: %s\nDriver UUID: %s\nOrigin: %s\nDestination: %s\nTaxi type: %s\nDate: %s\n"+
+			"Duration: %s", item.GetUserUuid(), item.GetDriverUuid(), item.GetOrigin(), item.GetDestination(),
+			item.GetTaxiType(), item.GetDate(), item.GetDuration()))
+	}
+	return orders
 }

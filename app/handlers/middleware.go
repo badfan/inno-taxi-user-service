@@ -16,19 +16,19 @@ const (
 func (h *Handler) Middleware(c *gin.Context) {
 	header := c.GetHeader(authorizationHeader)
 	if header == "" {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrInvalidToken, "empty authorization header"), h.logger)
+		h.ErrorLogger(c, errors.Wrap(apperrors.ErrInvalidToken, "empty authorization header"))
 		return
 	}
 
 	headerParts := strings.Split(header, " ")
 	if len(headerParts) != 2 {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrInvalidToken, "invalid authorization header"), h.logger)
+		h.ErrorLogger(c, errors.Wrap(apperrors.ErrInvalidToken, "invalid authorization header"))
 		return
 	}
 
 	id, err := h.authService.ParseToken(headerParts[1])
 	if err != nil {
-		apperrors.NewErrorResponse(c, err, h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 

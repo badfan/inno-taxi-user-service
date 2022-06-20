@@ -4,16 +4,6 @@ package proto;
 
 option go_package = "github.com/badfan/inno-taxi-user-service";
 
-message Order {
-  string user_uuid = 1;
-  string driver_uuid = 2;
-  string origin = 3;
-  string destination = 4;
-  string taxi_type = 5;
-  string date = 6;
-  string duration = 7;
-}
-
 message SetDriverRatingRequest {
   int32 rating = 1;
 }
@@ -21,8 +11,6 @@ message SetDriverRatingRequest {
 message SetUserRatingRequest {
   int32 rating = 1;
 }
-
-message EmptyResponse {}
 
 message GetTaxiForUserRequest{
   string user_uuid = 1;
@@ -54,10 +42,26 @@ message GetOrderHistoryRequest {
   string uuid = 1;
 }
 
+message GetOrderHistoryResponse {
+  repeated Order orders = 1;
+}
+
+message Order {
+  string user_uuid = 1;
+  string driver_uuid = 2;
+  string origin = 3;
+  string destination = 4;
+  string taxi_type = 5;
+  string date = 6;
+  string duration = 7;
+}
+
+message EmptyResponse {}
+
 service OrderService {
   rpc SetDriverRating (SetDriverRatingRequest) returns (EmptyResponse) {}
   rpc SetUserRating (SetUserRatingRequest) returns (EmptyResponse) {}
   rpc GetTaxiForUser (GetTaxiForUserRequest) returns (GetTaxiForUserResponse) {}
   rpc GetOrderForDriver (GetOrderForDriverRequest) returns (GetOrderForDriverResponse) {}
-  rpc GetOrderHistory (GetOrderHistoryRequest) returns (stream Order) {}
+  rpc GetOrderHistory (GetOrderHistoryRequest) returns (GetOrderHistoryResponse) {}
 }

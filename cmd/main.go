@@ -98,10 +98,9 @@ func main() {
 		return
 	}
 	defer grpcClientConn.Close()
-	grpcClient := pb.NewOrderServiceClient(grpcClientConn)
 
 	authService := auth.NewAuthenticationService(resource, logger)
-	userService := user.NewUserService(resource, grpcClient, apiConfig, logger)
+	userService := user.NewUserService(resource, pb.NewOrderServiceClient(grpcClientConn), apiConfig, logger)
 	handler := handlers.NewHandler(authService, userService, logger)
 
 	router := InitRouter(handler)

@@ -23,7 +23,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/badfan/inno-taxi-user-service/app/apperrors"
 	"github.com/pkg/errors"
 
 	pb "github.com/badfan/inno-taxi-user-service/app/services/proto"
@@ -44,13 +43,13 @@ func (h *Handler) SignUp(c *gin.Context) {
 	var input models.User
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrBadRequest, err.Error()), h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
 	id, err := h.userService.SignUp(c.Request.Context(), &input)
 	if err != nil {
-		apperrors.NewErrorResponse(c, err, h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
@@ -72,13 +71,13 @@ func (h *Handler) SignIn(c *gin.Context) {
 	var input models.User
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrBadRequest, err.Error()), h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
 	token, err := h.userService.SignIn(c.Request.Context(), input.PhoneNumber, input.Password)
 	if err != nil {
-		apperrors.NewErrorResponse(c, err, h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
@@ -101,13 +100,13 @@ func (h *Handler) SignIn(c *gin.Context) {
 func (h *Handler) GetUserRating(c *gin.Context) {
 	id, ok := c.Get("userID")
 	if !ok {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrInternalServer, "user id not found"), h.logger)
+		h.ErrorLogger(c, errors.New("user id not found"))
 		return
 	}
 
 	rating, err := h.userService.GetUserRating(c.Request.Context(), id.(int))
 	if err != nil {
-		apperrors.NewErrorResponse(c, err, h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
@@ -131,19 +130,19 @@ func (h *Handler) GetUserRating(c *gin.Context) {
 func (h *Handler) SetDriverRating(c *gin.Context) {
 	_, ok := c.Get("userID")
 	if !ok {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrInternalServer, "user id not found"), h.logger)
+		h.ErrorLogger(c, errors.New("user id not found"))
 		return
 	}
 
 	var input pb.SetDriverRatingRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrBadRequest, err.Error()), h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
 	err := h.userService.SetDriverRating(c.Request.Context(), int(input.GetRating()))
 	if err != nil {
-		apperrors.NewErrorResponse(c, err, h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
@@ -166,13 +165,13 @@ func (h *Handler) SetDriverRating(c *gin.Context) {
 func (h *Handler) GetOrderHistory(c *gin.Context) {
 	id, ok := c.Get("userID")
 	if !ok {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrInternalServer, "user id not found"), h.logger)
+		h.ErrorLogger(c, errors.New("user id not found"))
 		return
 	}
 
 	orderHistory, err := h.userService.GetOrderHistory(c.Request.Context(), id.(int))
 	if err != nil {
-		apperrors.NewErrorResponse(c, err, h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
@@ -197,19 +196,19 @@ func (h *Handler) GetOrderHistory(c *gin.Context) {
 func (h *Handler) FindTaxi(c *gin.Context) {
 	id, ok := c.Get("userID")
 	if !ok {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrInternalServer, "user id not found"), h.logger)
+		h.ErrorLogger(c, errors.New("user id not found"))
 		return
 	}
 
 	var input pb.GetTaxiForUserRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
-		apperrors.NewErrorResponse(c, errors.Wrap(apperrors.ErrBadRequest, err.Error()), h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
 	driverUUID, driverRating, err := h.userService.FindTaxi(c.Request.Context(), id.(int), input.GetOrigin(), input.GetDestination(), input.GetTaxiType())
 	if err != nil {
-		apperrors.NewErrorResponse(c, err, h.logger)
+		h.ErrorLogger(c, err)
 		return
 	}
 
@@ -220,7 +219,7 @@ func (h *Handler) FindTaxi(c *gin.Context) {
 }
 
 // swagger:response idResponse
-type idResponse struct {
+type _ struct {
 	// in: body
 	Body struct {
 		ID int `json:"id,omitempty"`
@@ -228,7 +227,7 @@ type idResponse struct {
 }
 
 // swagger:response tokenResponse
-type tokenResponse struct {
+type _ struct {
 	// in: body
 	Body struct {
 		Token string `json:"token,omitempty"`
@@ -236,7 +235,7 @@ type tokenResponse struct {
 }
 
 // swagger:response ratingResponse
-type ratingResponse struct {
+type _ struct {
 	// in: body
 	Body struct {
 		Rating float32 `json:"rating,omitempty"`
@@ -244,7 +243,7 @@ type ratingResponse struct {
 }
 
 // swagger:response msgResponse
-type msgResponse struct {
+type _ struct {
 	// in: body
 	Body struct {
 		Message string `json:"message,omitempty"`
@@ -252,7 +251,7 @@ type msgResponse struct {
 }
 
 // swagger:response ordersResponse
-type ordersResponse struct {
+type _ struct {
 	// in: body
 	Body struct {
 		Orders []string `json:"orders,omitempty"`
@@ -260,7 +259,7 @@ type ordersResponse struct {
 }
 
 // swagger:response findTaxiResponse
-type findTaxiResponse struct {
+type _ struct {
 	// in: body
 	Body struct {
 		DriverUUID string  `json:"driver_uuid,omitempty"`
@@ -269,7 +268,7 @@ type findTaxiResponse struct {
 }
 
 // swagger:response ErrorMsg
-type ErrorMsg struct {
+type _ struct {
 	// in: body
 	Body struct {
 		Message string `json:"message,omitempty"`

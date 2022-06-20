@@ -27,7 +27,7 @@ type OrderServiceClient interface {
 	SetUserRating(ctx context.Context, in *SetUserRatingRequest, opts ...grpc.CallOption) (*EmptyResponse, error)
 	GetTaxiForUser(ctx context.Context, in *GetTaxiForUserRequest, opts ...grpc.CallOption) (*GetTaxiForUserResponse, error)
 	GetOrderForDriver(ctx context.Context, in *GetOrderForDriverRequest, opts ...grpc.CallOption) (*GetOrderForDriverResponse, error)
-	GetOrderHistory(ctx context.Context, in *GetOrderHistoryRequest, opts ...grpc.CallOption) (OrderService_GetOrderHistoryClient, error)
+	GetOrderHistory(ctx context.Context, in *GetOrderHistoryRequest, opts ...grpc.CallOption) (*GetOrderHistoryResponse, error)
 }
 
 type orderServiceClient struct {
@@ -74,36 +74,13 @@ func (c *orderServiceClient) GetOrderForDriver(ctx context.Context, in *GetOrder
 	return out, nil
 }
 
-func (c *orderServiceClient) GetOrderHistory(ctx context.Context, in *GetOrderHistoryRequest, opts ...grpc.CallOption) (OrderService_GetOrderHistoryClient, error) {
-	stream, err := c.cc.NewStream(ctx, &OrderService_ServiceDesc.Streams[0], "/proto.OrderService/GetOrderHistory", opts...)
+func (c *orderServiceClient) GetOrderHistory(ctx context.Context, in *GetOrderHistoryRequest, opts ...grpc.CallOption) (*GetOrderHistoryResponse, error) {
+	out := new(GetOrderHistoryResponse)
+	err := c.cc.Invoke(ctx, "/proto.OrderService/GetOrderHistory", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &orderServiceGetOrderHistoryClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type OrderService_GetOrderHistoryClient interface {
-	Recv() (*Order, error)
-	grpc.ClientStream
-}
-
-type orderServiceGetOrderHistoryClient struct {
-	grpc.ClientStream
-}
-
-func (x *orderServiceGetOrderHistoryClient) Recv() (*Order, error) {
-	m := new(Order)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 // OrderServiceServer is the server API for OrderService service.
@@ -114,7 +91,7 @@ type OrderServiceServer interface {
 	SetUserRating(context.Context, *SetUserRatingRequest) (*EmptyResponse, error)
 	GetTaxiForUser(context.Context, *GetTaxiForUserRequest) (*GetTaxiForUserResponse, error)
 	GetOrderForDriver(context.Context, *GetOrderForDriverRequest) (*GetOrderForDriverResponse, error)
-	GetOrderHistory(*GetOrderHistoryRequest, OrderService_GetOrderHistoryServer) error
+	GetOrderHistory(context.Context, *GetOrderHistoryRequest) (*GetOrderHistoryResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -134,14 +111,14 @@ func (UnimplementedOrderServiceServer) GetTaxiForUser(context.Context, *GetTaxiF
 func (UnimplementedOrderServiceServer) GetOrderForDriver(context.Context, *GetOrderForDriverRequest) (*GetOrderForDriverResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrderForDriver not implemented")
 }
-func (UnimplementedOrderServiceServer) GetOrderHistory(*GetOrderHistoryRequest, OrderService_GetOrderHistoryServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetOrderHistory not implemented")
+func (UnimplementedOrderServiceServer) GetOrderHistory(context.Context, *GetOrderHistoryRequest) (*GetOrderHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrderHistory not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 
 // UnsafeOrderServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to OrderServiceServer will
-// result in compilation apperrors.
+// result in compilation errors.
 type UnsafeOrderServiceServer interface {
 	mustEmbedUnimplementedOrderServiceServer()
 }
@@ -222,25 +199,22 @@ func _OrderService_GetOrderForDriver_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OrderService_GetOrderHistory_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(GetOrderHistoryRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
+func _OrderService_GetOrderHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
 	}
-	return srv.(OrderServiceServer).GetOrderHistory(m, &orderServiceGetOrderHistoryServer{stream})
-}
-
-type OrderService_GetOrderHistoryServer interface {
-	Send(*Order) error
-	grpc.ServerStream
-}
-
-type orderServiceGetOrderHistoryServer struct {
-	grpc.ServerStream
-}
-
-func (x *orderServiceGetOrderHistoryServer) Send(m *Order) error {
-	return x.ServerStream.SendMsg(m)
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetOrderHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/proto.OrderService/GetOrderHistory",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetOrderHistory(ctx, req.(*GetOrderHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
@@ -266,13 +240,11 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "GetOrderForDriver",
 			Handler:    _OrderService_GetOrderForDriver_Handler,
 		},
-	},
-	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "GetOrderHistory",
-			Handler:       _OrderService_GetOrderHistory_Handler,
-			ServerStreams: true,
+			MethodName: "GetOrderHistory",
+			Handler:    _OrderService_GetOrderHistory_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "proto/user.proto",
 }
