@@ -3,10 +3,13 @@ package user
 import (
 	"context"
 	"crypto/sha1"
-	"errors"
+	"database/sql"
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/badfan/inno-taxi-user-service/app/apperrors"
+	"github.com/pkg/errors"
 
 	"github.com/badfan/inno-taxi-user-service/app"
 	"github.com/badfan/inno-taxi-user-service/app/models"
@@ -27,8 +30,8 @@ type IUserService interface {
 	SignIn(ctx context.Context, phone, password string) (string, error)
 	GetUserRating(ctx context.Context, id int) (float32, error)
 	SetDriverRating(ctx context.Context, rating int) error
-	GetOrderHistory(ctx context.Context, id int) ([]*pb.Order, error)
-	GetTaxi(ctx context.Context, id int, origin, destination, taxiType string) (*pb.GetTaxiForUserResponse, error)
+	GetOrderHistory(ctx context.Context, id int) ([]string, error)
+	FindTaxi(ctx context.Context, id int, origin, destination, taxiType string) (string, float32, error)
 }
 
 type UserService struct {
@@ -49,14 +52,14 @@ type TokenClaims struct {
 
 func (s *UserService) SignUp(ctx context.Context, user *models.User) (int, error) {
 	if _, err := s.resource.GetUserIDByPhone(ctx, user.PhoneNumber); err == nil {
-		return 0, errors.New("phone number is already taken")
+		return 0, errors.Wrapf(apperrors.ErrPhoneNumberIsAlreadyTaken, "error occurred while verifying phone number: %s", err.Error())
 	}
 
 	user.Password = generatePasswordHash(user.Password)
 
 	res, err := s.resource.CreateUser(ctx, user)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while creating user: %s", err.Error())
 	}
 
 	return res, err
@@ -67,7 +70,15 @@ func (s *UserService) SignIn(ctx context.Context, phone, password string) (strin
 
 	user, err := s.resource.GetUserByPhoneAndPassword(ctx, phone, password)
 	if err != nil {
-		return "", err
+		var apperr error
+		switch err {
+		case sql.ErrNoRows:
+			apperr = apperrors.ErrNotFound
+		default:
+			apperr = apperrors.ErrInternalServer
+		}
+		return "", errors.Wrapf(apperr,
+			"error occurred while verifying phone number and password: %s", err.Error())
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &TokenClaims{ //nolint:typecheck
@@ -82,44 +93,53 @@ func (s *UserService) SignIn(ctx context.Context, phone, password string) (strin
 }
 
 func (s *UserService) GetUserRating(ctx context.Context, id int) (float32, error) {
-	return s.resource.GetUserRatingByID(ctx, id)
+	user, err := s.resource.GetUserRatingByID(ctx, id)
+	if err != nil {
+		return 0, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting user rating: %s", err.Error())
+	}
+	return user, nil
 }
 
 func (s *UserService) SetDriverRating(ctx context.Context, rating int) error {
 	_, err := s.grpcClient.SetDriverRating(ctx, &proto.SetDriverRatingRequest{Rating: int32(rating)})
-	return err
+	if err != nil {
+		return errors.Wrapf(apperrors.ErrInternalServer, "error occurred while setting driver rating: %s", err.Error())
+	}
+	return nil
 }
 
-func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]*pb.Order, error) {
+func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]string, error) {
 	uuid, err := s.resource.GetUserUUIDByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting user UUID: %s", err.Error())
 	}
 
 	stream, err := s.grpcClient.GetOrderHistory(ctx, &proto.GetOrderHistoryRequest{Uuid: uuid.String()})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting grpc stream: %s", err.Error())
+
 	}
 
-	var orderHistory []*pb.Order
+	var orderHistory []string
 	for {
 		order, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting orders from stream: %s", err.Error())
 		}
-		orderHistory = append(orderHistory, order)
+		convertedOrder := grpcOrderConvert(order)
+		orderHistory = append(orderHistory, convertedOrder)
 	}
 
 	return orderHistory, nil
 }
 
-func (s *UserService) GetTaxi(ctx context.Context, id int, origin, destination, taxiType string) (*pb.GetTaxiForUserResponse, error) {
+func (s *UserService) FindTaxi(ctx context.Context, id int, origin, destination, taxiType string) (string, float32, error) {
 	userUUID, rating, err := s.resource.GetUserUUIDAndRatingByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return "", 0, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while getting user UUID and rating: %s", err.Error())
 	}
 
 	driverInfo, err := s.grpcClient.GetTaxiForUser(ctx, &pb.GetTaxiForUserRequest{
@@ -130,10 +150,10 @@ func (s *UserService) GetTaxi(ctx context.Context, id int, origin, destination, 
 		TaxiType:    taxiType,
 	})
 	if err != nil {
-		return nil, err
+		return "", 0, errors.Wrapf(apperrors.ErrInternalServer, "error occurred while finding taxi: %s", err.Error())
 	}
 
-	return driverInfo, nil
+	return driverInfo.GetDriverUuid(), driverInfo.GetDriverRating(), nil
 }
 
 func generatePasswordHash(password string) string {
@@ -141,4 +161,10 @@ func generatePasswordHash(password string) string {
 	hash.Write([]byte(password))
 
 	return fmt.Sprintf("%x", hash.Sum([]byte(hashSalt)))
+}
+
+func grpcOrderConvert(source *pb.Order) string {
+	return fmt.Sprintf("User UUID: %s\nDriver UUID: %s\nOrigin: %s\nDestination: %s\nTaxi type: %s\nDate: %s\n"+
+		"Duration: %s", source.GetUserUuid(), source.GetDriverUuid(), source.GetOrigin(), source.GetDestination(),
+		source.GetTaxiType(), source.GetDate(), source.GetDuration())
 }

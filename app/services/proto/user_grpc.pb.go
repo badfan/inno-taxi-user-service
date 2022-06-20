@@ -141,7 +141,7 @@ func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer(
 
 // UnsafeOrderServiceServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to OrderServiceServer will
-// result in compilation errors.
+// result in compilation apperrors.
 type UnsafeOrderServiceServer interface {
 	mustEmbedUnimplementedOrderServiceServer()
 }

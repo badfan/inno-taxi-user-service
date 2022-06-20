@@ -19,7 +19,6 @@ func (r *Resource) CreateUser(ctx context.Context, user *models.User) (int, erro
 		Password:    user.Password,
 	})
 	if err != nil {
-		r.logger.Errorf("error occured while creating user: %s", err.Error())
 		return 0, err
 	}
 
@@ -31,7 +30,6 @@ func (r *Resource) GetUserIDByPhone(ctx context.Context, phone string) (int, err
 
 	res, err := queries.GetUserIDByPhone(ctx, phone)
 	if err != nil {
-		r.logger.Infof("error occured while getting user id by phone: %s", err.Error())
 		return 0, err
 	}
 
@@ -46,7 +44,6 @@ func (r *Resource) GetUserByPhoneAndPassword(ctx context.Context, phone, passwor
 		Password:    password,
 	})
 	if err != nil {
-		r.logger.Errorf("error occured while getting user by phone and password: %s", err.Error())
 		return nil, err
 	}
 
@@ -60,7 +57,6 @@ func (r *Resource) GetUserRatingByID(ctx context.Context, id int) (float32, erro
 
 	res, err := queries.GetUserRatingByID(ctx, int32(id))
 	if err != nil {
-		r.logger.Errorf("error occured while getting user rating by id: %s", err.Error())
 		return 0, err
 	}
 
@@ -72,7 +68,6 @@ func (r *Resource) GetUserUUIDByID(ctx context.Context, id int) (uuid.UUID, erro
 
 	res, err := queries.GetUserUUIDByID(ctx, int32(id))
 	if err != nil {
-		r.logger.Errorf("error occured while getting user uuid by id: %s", err.Error())
 		return uuid.UUID{}, err
 	}
 
@@ -84,7 +79,6 @@ func (r *Resource) GetUserUUIDAndRatingByID(ctx context.Context, id int) (uuid.U
 
 	res, err := queries.GetUserUUIDAndRatingByID(ctx, int32(id))
 	if err != nil {
-		r.logger.Errorf("error occured while getting user info for order by id: %s", err.Error())
 		return uuid.UUID{}, 0, err
 	}
 

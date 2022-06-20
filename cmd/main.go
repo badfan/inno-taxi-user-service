@@ -58,16 +58,16 @@ func InitRouter(handler *handlers.Handler) *gin.Engine {
 	return router
 }
 
-func InitGRPC(apiConfig *app.APIConfig, logger *zap.SugaredLogger) *grpc.ClientConn {
+func InitGRPC(apiConfig *app.APIConfig) (*grpc.ClientConn, error) {
 	var options []grpc.DialOption
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	conn, err := grpc.Dial("localhost:"+apiConfig.RPCPort, options...)
 	if err != nil {
-		logger.Fatalf("error occured while connecting to GRPC server: %s", err.Error())
+		return nil, err
 	}
 
-	return conn
+	return conn, nil
 }
 
 func main() {
@@ -76,31 +76,38 @@ func main() {
 
 	apiConfig, err := app.NewAPIConfig()
 	if err != nil {
-		logger.Errorf("apiconfig error: %s", err.Error())
+		logger.Fatalf("error occurred while preparing apiconfig: %s", err.Error())
+		return
 	}
 	dbConfig, err := app.NewDBConfig()
 	if err != nil {
-		logger.Errorf("dbconfig error: %s", err.Error())
+		logger.Fatalf("error occurred while preparing dbconfig: %s", err.Error())
+		return
 	}
 
 	resource, err := resources.NewResource(dbConfig, logger)
 	if err != nil {
-		logger.Fatalf("db error: %s", err.Error())
+		logger.Fatalf("error occurred while creating new resource: %s")
+		return
 	}
 	defer resource.Db.Close()
 
-	grpcClientConn := InitGRPC(apiConfig, logger)
+	grpcClientConn, err := InitGRPC(apiConfig)
+	if err != nil {
+		logger.Fatalf("error occurred while connecting to GRPC server: %s", err.Error())
+		return
+	}
 	defer grpcClientConn.Close()
-	client := pb.NewOrderServiceClient(grpcClientConn)
+	grpcClient := pb.NewOrderServiceClient(grpcClientConn)
 
 	authService := auth.NewAuthenticationService(resource, logger)
-	userService := user.NewUserService(resource, client, apiConfig, logger)
+	userService := user.NewUserService(resource, grpcClient, apiConfig, logger)
 	handler := handlers.NewHandler(authService, userService, logger)
 
 	router := InitRouter(handler)
 
 	server := new(Server)
 	if err := server.Run(router, apiConfig.APIPort); err != nil {
-		logger.Fatalf("error occured while running http server: %s", err.Error())
+		logger.Fatalf("error occurred while running http server: %s", err.Error())
 	}
 }

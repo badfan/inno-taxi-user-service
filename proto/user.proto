@@ -5,13 +5,13 @@ package proto;
 option go_package = "github.com/badfan/inno-taxi-user-service";
 
 message Order {
-  string user_uuid = 2;
-  string driver_uuid = 3;
-  string origin = 4;
-  string destination = 5;
-  string taxi_type = 6;
-  string date = 9;
-  string duration = 10;
+  string user_uuid = 1;
+  string driver_uuid = 2;
+  string origin = 3;
+  string destination = 4;
+  string taxi_type = 5;
+  string date = 6;
+  string duration = 7;
 }
 
 message SetDriverRatingRequest {
