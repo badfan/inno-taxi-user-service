@@ -113,7 +113,7 @@ func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]string, er
 
 	ordersResponse, err := s.orderService.GetOrderHistory(ctx, &proto.GetOrderHistoryRequest{Uuid: uuid.String()})
 	if err != nil {
-		return nil, errors.Wrap(err, "error occurred while orders history from grpc server")
+		return nil, errors.Wrap(err, "error occurred while getting orders history from grpc server")
 	}
 
 	orderHistory := grpcOrdersConvert(ordersResponse.Orders)
@@ -135,7 +135,7 @@ func (s *UserService) FindTaxi(ctx context.Context, id int, origin, destination,
 		TaxiType:    taxiType,
 	})
 	if err != nil {
-		return "", 0, errors.Wrap(err, "error occurred while finding taxi")
+		return "", 0, errors.Wrap(err, "error occurred while finding taxi for user")
 	}
 
 	return driverInfo.GetDriverUuid(), driverInfo.GetDriverRating(), nil
@@ -155,5 +155,6 @@ func grpcOrdersConvert(source []*pb.Order) []string {
 			"Duration: %s", item.GetUserUuid(), item.GetDriverUuid(), item.GetOrigin(), item.GetDestination(),
 			item.GetTaxiType(), item.GetDate(), item.GetDuration()))
 	}
+
 	return orders
 }

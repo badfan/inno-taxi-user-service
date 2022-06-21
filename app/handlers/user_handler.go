@@ -64,7 +64,6 @@ func (h *Handler) SignUp(c *gin.Context) {
 //
 // responses:
 //   200: tokenResponse
-//   400: ErrorMsg
 //   404: ErrorMsg
 //   500: ErrorMsg
 func (h *Handler) SignIn(c *gin.Context) {
@@ -125,7 +124,6 @@ func (h *Handler) GetUserRating(c *gin.Context) {
 //
 // responses:
 //   200: msgResponse
-//   400: ErrorMsg
 //   500: ErrorMsg
 func (h *Handler) SetDriverRating(c *gin.Context) {
 	_, ok := c.Get("userID")
@@ -190,8 +188,6 @@ func (h *Handler) GetOrderHistory(c *gin.Context) {
 //
 // responses:
 //   200: findTaxiResponse
-//   400: ErrorMsg
-//	 404: ErrorMsg
 //   500: ErrorMsg
 func (h *Handler) FindTaxi(c *gin.Context) {
 	id, ok := c.Get("userID")

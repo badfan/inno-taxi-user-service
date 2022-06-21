@@ -87,7 +87,7 @@ func main() {
 
 	resource, err := resources.NewResource(dbConfig, logger)
 	if err != nil {
-		logger.Fatalf("error occurred while creating new resource: %s")
+		logger.Fatalf("error occurred while creating new resource: %s", err.Error())
 		return
 	}
 	defer resource.Db.Close()
