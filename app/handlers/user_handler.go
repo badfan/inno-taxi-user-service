@@ -23,9 +23,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pkg/errors"
+	pb "github.com/badfan/inno-taxi-user-service/app/rpc"
 
-	pb "github.com/badfan/inno-taxi-user-service/app/services/proto"
+	"github.com/pkg/errors"
 
 	"github.com/badfan/inno-taxi-user-service/app/models"
 	"github.com/gin-gonic/gin"

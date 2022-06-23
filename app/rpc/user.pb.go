@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.28.0
 // 	protoc        v3.15.8
-// source: proto/user.proto
+// source: rpc/user.rpc
 
-package proto
+package rpc
 
 import (
 	reflect "reflect"
@@ -722,29 +722,29 @@ func file_proto_user_proto_rawDescGZIP() []byte {
 
 var file_proto_user_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_proto_user_proto_goTypes = []interface{}{
-	(*SetDriverRatingRequest)(nil),    // 0: proto.SetDriverRatingRequest
-	(*SetUserRatingRequest)(nil),      // 1: proto.SetUserRatingRequest
-	(*GetTaxiForUserRequest)(nil),     // 2: proto.GetTaxiForUserRequest
-	(*GetTaxiForUserResponse)(nil),    // 3: proto.GetTaxiForUserResponse
-	(*GetOrderForDriverRequest)(nil),  // 4: proto.GetOrderForDriverRequest
-	(*GetOrderForDriverResponse)(nil), // 5: proto.GetOrderForDriverResponse
-	(*GetOrderHistoryRequest)(nil),    // 6: proto.GetOrderHistoryRequest
-	(*GetOrderHistoryResponse)(nil),   // 7: proto.GetOrderHistoryResponse
-	(*Order)(nil),                     // 8: proto.Order
-	(*EmptyResponse)(nil),             // 9: proto.EmptyResponse
+	(*SetDriverRatingRequest)(nil),    // 0: rpc.SetDriverRatingRequest
+	(*SetUserRatingRequest)(nil),      // 1: rpc.SetUserRatingRequest
+	(*GetTaxiForUserRequest)(nil),     // 2: rpc.GetTaxiForUserRequest
+	(*GetTaxiForUserResponse)(nil),    // 3: rpc.GetTaxiForUserResponse
+	(*GetOrderForDriverRequest)(nil),  // 4: rpc.GetOrderForDriverRequest
+	(*GetOrderForDriverResponse)(nil), // 5: rpc.GetOrderForDriverResponse
+	(*GetOrderHistoryRequest)(nil),    // 6: rpc.GetOrderHistoryRequest
+	(*GetOrderHistoryResponse)(nil),   // 7: rpc.GetOrderHistoryResponse
+	(*Order)(nil),                     // 8: rpc.Order
+	(*EmptyResponse)(nil),             // 9: rpc.EmptyResponse
 }
 var file_proto_user_proto_depIdxs = []int32{
-	8, // 0: proto.GetOrderHistoryResponse.orders:type_name -> proto.Order
-	0, // 1: proto.OrderService.SetDriverRating:input_type -> proto.SetDriverRatingRequest
-	1, // 2: proto.OrderService.SetUserRating:input_type -> proto.SetUserRatingRequest
-	2, // 3: proto.OrderService.GetTaxiForUser:input_type -> proto.GetTaxiForUserRequest
-	4, // 4: proto.OrderService.GetOrderForDriver:input_type -> proto.GetOrderForDriverRequest
-	6, // 5: proto.OrderService.GetOrderHistory:input_type -> proto.GetOrderHistoryRequest
-	9, // 6: proto.OrderService.SetDriverRating:output_type -> proto.EmptyResponse
-	9, // 7: proto.OrderService.SetUserRating:output_type -> proto.EmptyResponse
-	3, // 8: proto.OrderService.GetTaxiForUser:output_type -> proto.GetTaxiForUserResponse
-	5, // 9: proto.OrderService.GetOrderForDriver:output_type -> proto.GetOrderForDriverResponse
-	7, // 10: proto.OrderService.GetOrderHistory:output_type -> proto.GetOrderHistoryResponse
+	8, // 0: rpc.GetOrderHistoryResponse.orders:type_name -> rpc.Order
+	0, // 1: rpc.OrderService.SetDriverRating:input_type -> rpc.SetDriverRatingRequest
+	1, // 2: rpc.OrderService.SetUserRating:input_type -> rpc.SetUserRatingRequest
+	2, // 3: rpc.OrderService.GetTaxiForUser:input_type -> rpc.GetTaxiForUserRequest
+	4, // 4: rpc.OrderService.GetOrderForDriver:input_type -> rpc.GetOrderForDriverRequest
+	6, // 5: rpc.OrderService.GetOrderHistory:input_type -> rpc.GetOrderHistoryRequest
+	9, // 6: rpc.OrderService.SetDriverRating:output_type -> rpc.EmptyResponse
+	9, // 7: rpc.OrderService.SetUserRating:output_type -> rpc.EmptyResponse
+	3, // 8: rpc.OrderService.GetTaxiForUser:output_type -> rpc.GetTaxiForUserResponse
+	5, // 9: rpc.OrderService.GetOrderForDriver:output_type -> rpc.GetOrderForDriverResponse
+	7, // 10: rpc.OrderService.GetOrderHistory:output_type -> rpc.GetOrderHistoryResponse
 	6, // [6:11] is the sub-list for method output_type
 	1, // [1:6] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name

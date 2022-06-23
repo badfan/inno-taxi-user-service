@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"time"
 
+	pb "github.com/badfan/inno-taxi-user-service/app/rpc"
+	"github.com/badfan/inno-taxi-user-service/app/services/order"
+
 	"github.com/badfan/inno-taxi-user-service/app/apperrors"
 	"github.com/pkg/errors"
 
 	"github.com/badfan/inno-taxi-user-service/app"
 	"github.com/badfan/inno-taxi-user-service/app/models"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
-	"github.com/badfan/inno-taxi-user-service/app/services/proto"
-	pb "github.com/badfan/inno-taxi-user-service/app/services/proto"
 	"github.com/dgrijalva/jwt-go" //nolint:typecheck
 	"go.uber.org/zap"
 )
@@ -35,12 +36,12 @@ type IUserService interface {
 
 type UserService struct {
 	resource     resources.IResource
-	orderService proto.OrderServiceClient
+	orderService *order.OrderService
 	apiConfig    *app.APIConfig
 	logger       *zap.SugaredLogger
 }
 
-func NewUserService(resource resources.IResource, orderService proto.OrderServiceClient, apiConfig *app.APIConfig, logger *zap.SugaredLogger) *UserService {
+func NewUserService(resource resources.IResource, orderService *order.OrderService, apiConfig *app.APIConfig, logger *zap.SugaredLogger) *UserService {
 	return &UserService{resource: resource, orderService: orderService, apiConfig: apiConfig, logger: logger}
 }
 
@@ -70,7 +71,7 @@ func (s *UserService) SignIn(ctx context.Context, phone, password string) (strin
 	user, err := s.resource.GetUserByPhoneAndPassword(ctx, phone, password)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return "", errors.Wrapf(apperrors.ErrNotFound,
+			return "", errors.Wrapf(apperrors.ErrUserNotFound,
 				"error occurred while verifying phone number and password: %s", err.Error())
 		}
 		return "", errors.Wrap(err, "error occurred while verifying phone number and password")
@@ -97,7 +98,7 @@ func (s *UserService) GetUserRating(ctx context.Context, id int) (float32, error
 }
 
 func (s *UserService) SetDriverRating(ctx context.Context, rating int) error {
-	_, err := s.orderService.SetDriverRating(ctx, &proto.SetDriverRatingRequest{Rating: int32(rating)})
+	_, err := s.orderService.SetDriverRating(ctx, &pb.SetDriverRatingRequest{Rating: int32(rating)})
 	if err != nil {
 		return errors.Wrap(err, "error occurred while setting driver rating")
 	}
@@ -111,12 +112,12 @@ func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]string, er
 		return nil, errors.Wrap(err, "error occurred while getting user UUID")
 	}
 
-	ordersResponse, err := s.orderService.GetOrderHistory(ctx, &proto.GetOrderHistoryRequest{Uuid: uuid.String()})
+	ordersResponse, err := s.orderService.GetOrderHistory(ctx, &pb.GetOrderHistoryRequest{Uuid: uuid.String()})
 	if err != nil {
 		return nil, errors.Wrap(err, "error occurred while getting orders history from grpc server")
 	}
 
-	orderHistory := grpcOrdersConvert(ordersResponse.Orders)
+	orderHistory := order.GRPCOrdersConvert(ordersResponse.Orders)
 
 	return orderHistory, nil
 }
@@ -146,15 +147,4 @@ func generatePasswordHash(password string) string {
 	hash.Write([]byte(password))
 
 	return fmt.Sprintf("%x", hash.Sum([]byte(hashSalt)))
-}
-
-func grpcOrdersConvert(source []*pb.Order) []string {
-	var orders []string
-	for _, item := range source {
-		orders = append(orders, fmt.Sprintf("User UUID: %s\nDriver UUID: %s\nOrigin: %s\nDestination: %s\nTaxi type: %s\nDate: %s\n"+
-			"Duration: %s", item.GetUserUuid(), item.GetDriverUuid(), item.GetOrigin(), item.GetDestination(),
-			item.GetTaxiType(), item.GetDate(), item.GetDuration()))
-	}
-
-	return orders
 }

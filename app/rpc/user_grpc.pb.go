@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.15.8
-// source: proto/user.proto
+// source: rpc/user.rpc
 
-package proto
+package rpc
 
 import (
 	context "context"
@@ -40,7 +40,7 @@ func NewOrderServiceClient(cc grpc.ClientConnInterface) OrderServiceClient {
 
 func (c *orderServiceClient) SetDriverRating(ctx context.Context, in *SetDriverRatingRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	out := new(EmptyResponse)
-	err := c.cc.Invoke(ctx, "/proto.OrderService/SetDriverRating", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rpc.OrderService/SetDriverRating", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (c *orderServiceClient) SetDriverRating(ctx context.Context, in *SetDriverR
 
 func (c *orderServiceClient) SetUserRating(ctx context.Context, in *SetUserRatingRequest, opts ...grpc.CallOption) (*EmptyResponse, error) {
 	out := new(EmptyResponse)
-	err := c.cc.Invoke(ctx, "/proto.OrderService/SetUserRating", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rpc.OrderService/SetUserRating", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (c *orderServiceClient) SetUserRating(ctx context.Context, in *SetUserRatin
 
 func (c *orderServiceClient) GetTaxiForUser(ctx context.Context, in *GetTaxiForUserRequest, opts ...grpc.CallOption) (*GetTaxiForUserResponse, error) {
 	out := new(GetTaxiForUserResponse)
-	err := c.cc.Invoke(ctx, "/proto.OrderService/GetTaxiForUser", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rpc.OrderService/GetTaxiForUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (c *orderServiceClient) GetTaxiForUser(ctx context.Context, in *GetTaxiForU
 
 func (c *orderServiceClient) GetOrderForDriver(ctx context.Context, in *GetOrderForDriverRequest, opts ...grpc.CallOption) (*GetOrderForDriverResponse, error) {
 	out := new(GetOrderForDriverResponse)
-	err := c.cc.Invoke(ctx, "/proto.OrderService/GetOrderForDriver", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rpc.OrderService/GetOrderForDriver", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (c *orderServiceClient) GetOrderForDriver(ctx context.Context, in *GetOrder
 
 func (c *orderServiceClient) GetOrderHistory(ctx context.Context, in *GetOrderHistoryRequest, opts ...grpc.CallOption) (*GetOrderHistoryResponse, error) {
 	out := new(GetOrderHistoryResponse)
-	err := c.cc.Invoke(ctx, "/proto.OrderService/GetOrderHistory", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rpc.OrderService/GetOrderHistory", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func _OrderService_SetDriverRating_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.OrderService/SetDriverRating",
+		FullMethod: "/rpc.OrderService/SetDriverRating",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OrderServiceServer).SetDriverRating(ctx, req.(*SetDriverRatingRequest))
@@ -155,7 +155,7 @@ func _OrderService_SetUserRating_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.OrderService/SetUserRating",
+		FullMethod: "/rpc.OrderService/SetUserRating",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OrderServiceServer).SetUserRating(ctx, req.(*SetUserRatingRequest))
@@ -173,7 +173,7 @@ func _OrderService_GetTaxiForUser_Handler(srv interface{}, ctx context.Context, 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.OrderService/GetTaxiForUser",
+		FullMethod: "/rpc.OrderService/GetTaxiForUser",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OrderServiceServer).GetTaxiForUser(ctx, req.(*GetTaxiForUserRequest))
@@ -191,7 +191,7 @@ func _OrderService_GetOrderForDriver_Handler(srv interface{}, ctx context.Contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.OrderService/GetOrderForDriver",
+		FullMethod: "/rpc.OrderService/GetOrderForDriver",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OrderServiceServer).GetOrderForDriver(ctx, req.(*GetOrderForDriverRequest))
@@ -209,7 +209,7 @@ func _OrderService_GetOrderHistory_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.OrderService/GetOrderHistory",
+		FullMethod: "/rpc.OrderService/GetOrderHistory",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OrderServiceServer).GetOrderHistory(ctx, req.(*GetOrderHistoryRequest))
@@ -221,7 +221,7 @@ func _OrderService_GetOrderHistory_Handler(srv interface{}, ctx context.Context,
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var OrderService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.OrderService",
+	ServiceName: "rpc.OrderService",
 	HandlerType: (*OrderServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -246,5 +246,5 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/user.proto",
+	Metadata: "rpc/user.rpc",
 }

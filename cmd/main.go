@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/badfan/inno-taxi-user-service/app/services/order"
+
 	"github.com/badfan/inno-taxi-user-service/app/services/user"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,7 +18,6 @@ import (
 	"github.com/badfan/inno-taxi-user-service/app/handlers"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
 	"github.com/badfan/inno-taxi-user-service/app/services/auth"
-	pb "github.com/badfan/inno-taxi-user-service/app/services/proto"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -99,8 +100,9 @@ func main() {
 	}
 	defer grpcClientConn.Close()
 
+	orderService := order.NewOrderService(grpcClientConn)
 	authService := auth.NewAuthenticationService(resource, logger)
-	userService := user.NewUserService(resource, pb.NewOrderServiceClient(grpcClientConn), apiConfig, logger)
+	userService := user.NewUserService(resource, orderService, apiConfig, logger)
 	handler := handlers.NewHandler(authService, userService, logger)
 
 	router := InitRouter(handler)

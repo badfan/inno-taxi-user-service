@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrNotFound                  = errors.New("user not found")
+	ErrUserNotFound              = errors.New("user not found")
 	ErrPhoneNumberIsAlreadyTaken = errors.New("phone number is already taken")
 	ErrInvalidToken              = errors.New("invalid auth token")
 )
@@ -23,7 +23,7 @@ func ErrorResponse(c *gin.Context, err error) {
 	switch err {
 	case ErrPhoneNumberIsAlreadyTaken:
 		statusCode = http.StatusBadRequest
-	case ErrNotFound:
+	case ErrUserNotFound:
 		statusCode = http.StatusNotFound
 	case ErrInvalidToken:
 		statusCode = http.StatusUnauthorized
