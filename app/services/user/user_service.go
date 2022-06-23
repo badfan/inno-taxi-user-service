@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/badfan/inno-taxi-user-service/app/rpc"
 	"github.com/badfan/inno-taxi-user-service/app/services/order"
 
 	"github.com/badfan/inno-taxi-user-service/app/apperrors"
@@ -98,7 +97,7 @@ func (s *UserService) GetUserRating(ctx context.Context, id int) (float32, error
 }
 
 func (s *UserService) SetDriverRating(ctx context.Context, rating int) error {
-	_, err := s.orderService.SetDriverRating(ctx, &pb.SetDriverRatingRequest{Rating: int32(rating)})
+	_, err := s.orderService.SetDriverRating(ctx, order.SetDriverRatingRequestConvert(int32(rating)))
 	if err != nil {
 		return errors.Wrap(err, "error occurred while setting driver rating")
 	}
@@ -112,7 +111,7 @@ func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]string, er
 		return nil, errors.Wrap(err, "error occurred while getting user UUID")
 	}
 
-	ordersResponse, err := s.orderService.GetOrderHistory(ctx, &pb.GetOrderHistoryRequest{Uuid: uuid.String()})
+	ordersResponse, err := s.orderService.GetOrderHistory(ctx, order.GetOrderHistoryRequestConvert(uuid.String()))
 	if err != nil {
 		return nil, errors.Wrap(err, "error occurred while getting orders history from grpc server")
 	}
@@ -128,13 +127,7 @@ func (s *UserService) FindTaxi(ctx context.Context, id int, origin, destination,
 		return "", 0, errors.Wrap(err, "error occurred while getting user UUID and rating")
 	}
 
-	driverInfo, err := s.orderService.GetTaxiForUser(ctx, &pb.GetTaxiForUserRequest{
-		UserUuid:    userUUID.String(),
-		UserRating:  rating,
-		Origin:      origin,
-		Destination: destination,
-		TaxiType:    taxiType,
-	})
+	driverInfo, err := s.orderService.GetTaxiForUser(ctx, order.GetTaxiRequestConvert(rating, userUUID.String(), origin, destination, taxiType))
 	if err != nil {
 		return "", 0, errors.Wrap(err, "error occurred while finding taxi for user")
 	}

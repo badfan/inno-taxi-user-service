@@ -25,3 +25,21 @@ func GRPCOrdersConvert(source []*pb.Order) []string {
 
 	return orders
 }
+
+func GetOrderHistoryRequestConvert(source string) *pb.GetOrderHistoryRequest {
+	return &pb.GetOrderHistoryRequest{Uuid: source}
+}
+
+func SetDriverRatingRequestConvert(source int32) *pb.SetDriverRatingRequest {
+	return &pb.SetDriverRatingRequest{Rating: source}
+}
+
+func GetTaxiRequestConvert(rating float32, userUUID, origin, destination, taxiType string) *pb.GetTaxiForUserRequest {
+	return &pb.GetTaxiForUserRequest{
+		UserUuid:    userUUID,
+		UserRating:  rating,
+		Origin:      origin,
+		Destination: destination,
+		TaxiType:    taxiType,
+	}
+}
