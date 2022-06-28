@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"strings"
 
-	pb "github.com/badfan/inno-taxi-user-service/app/rpc"
+	"github.com/badfan/inno-taxi-user-service/app/rpc"
 
 	"github.com/pkg/errors"
 
@@ -132,7 +132,7 @@ func (h *Handler) SetDriverRating(c *gin.Context) {
 		return
 	}
 
-	var input pb.SetDriverRatingRequest
+	var input rpc.SetDriverRatingRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		h.ErrorLogger(c, err)
 		return
@@ -196,7 +196,7 @@ func (h *Handler) FindTaxi(c *gin.Context) {
 		return
 	}
 
-	var input pb.GetTaxiForUserRequest
+	var input rpc.GetTaxiForUserRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		h.ErrorLogger(c, err)
 		return

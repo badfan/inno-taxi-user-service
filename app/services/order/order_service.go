@@ -1,45 +1,73 @@
 package order
 
 import (
+	"context"
 	"fmt"
 
-	pb "github.com/badfan/inno-taxi-user-service/app/rpc"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
+
+	"github.com/badfan/inno-taxi-user-service/app/rpc"
 )
 
+type IOrderService interface {
+	SetDriverRating(ctx context.Context, rating int) error
+	GetOrderHistory(ctx context.Context, uuid uuid.UUID) ([]string, error)
+	GetTaxiForUser(ctx context.Context, uuid uuid.UUID, rating float32, origin, destination, taxiType string) (string, float32, error)
+}
+
 type OrderService struct {
-	pb.OrderServiceClient
+	Client rpc.OrderServiceClient
 }
 
 func NewOrderService(conn *grpc.ClientConn) *OrderService {
-	return &OrderService{pb.NewOrderServiceClient(conn)}
+	return &OrderService{Client: rpc.NewOrderServiceClient(conn)}
 }
 
-func GRPCOrdersConvert(source []*pb.Order) []string {
+func (s *OrderService) SetDriverRating(ctx context.Context, rating int) error {
+	_, err := s.Client.SetDriverRating(ctx, &rpc.SetDriverRatingRequest{Rating: int32(rating)})
+	return err
+}
+
+func (s *OrderService) GetOrderHistory(ctx context.Context, uuid uuid.UUID) ([]string, error) {
+	ordersResponse, err := s.Client.GetOrderHistory(ctx, &rpc.GetOrderHistoryRequest{Uuid: uuid.String()})
+	if err != nil {
+		return nil, err
+	}
+
+	orderHistory := grpcOrdersConvert(ordersResponse.GetOrders())
+
+	return orderHistory, nil
+}
+
+func (s *OrderService) GetTaxiForUser(
+	ctx context.Context,
+	uuid uuid.UUID,
+	rating float32,
+	origin, destination, taxiType string) (string, float32, error) {
+
+	driverInfo, err := s.Client.GetTaxiForUser(ctx,
+		&rpc.GetTaxiForUserRequest{
+			UserUuid:    uuid.String(),
+			Origin:      origin,
+			Destination: destination,
+			TaxiType:    taxiType,
+			UserRating:  rating,
+		})
+	if err != nil {
+		return "", 0, err
+	}
+
+	return driverInfo.GetDriverUuid(), driverInfo.GetDriverRating(), nil
+}
+
+func grpcOrdersConvert(source []*rpc.Order) []string {
 	var orders []string
 	for _, item := range source {
-		orders = append(orders, fmt.Sprintf("User UUID: %s\nDriver UUID: %s\nOrigin: %s\nDestination: %s\nTaxi type: %s\nDate: %s\n"+
-			"Duration: %s", item.GetUserUuid(), item.GetDriverUuid(), item.GetOrigin(), item.GetDestination(),
-			item.GetTaxiType(), item.GetDate(), item.GetDuration()))
+		orders = append(orders, fmt.Sprintf("User UUID: %s\nDriver UUID: %s\nOrigin: %s\nDestination: %s\n"+
+			"Taxi type: %s\nDate: %s\nDuration: %s", item.GetUserUuid(), item.GetDriverUuid(), item.GetOrigin(),
+			item.GetDestination(), item.GetTaxiType(), item.GetDate(), item.GetDuration()))
 	}
 
 	return orders
-}
-
-func GetOrderHistoryRequestConvert(source string) *pb.GetOrderHistoryRequest {
-	return &pb.GetOrderHistoryRequest{Uuid: source}
-}
-
-func SetDriverRatingRequestConvert(source int32) *pb.SetDriverRatingRequest {
-	return &pb.SetDriverRatingRequest{Rating: source}
-}
-
-func GetTaxiRequestConvert(rating float32, userUUID, origin, destination, taxiType string) *pb.GetTaxiForUserRequest {
-	return &pb.GetTaxiForUserRequest{
-		UserUuid:    userUUID,
-		UserRating:  rating,
-		Origin:      origin,
-		Destination: destination,
-		TaxiType:    taxiType,
-	}
 }

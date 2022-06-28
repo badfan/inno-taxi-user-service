@@ -63,12 +63,7 @@ func InitGRPC(apiConfig *app.APIConfig) (*grpc.ClientConn, error) {
 	var options []grpc.DialOption
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	conn, err := grpc.Dial("localhost:"+apiConfig.RPCPort, options...)
-	if err != nil {
-		return nil, err
-	}
-
-	return conn, nil
+	return grpc.Dial("localhost:"+apiConfig.RPCPort, options...)
 }
 
 func main() {
@@ -78,25 +73,21 @@ func main() {
 	apiConfig, err := app.NewAPIConfig()
 	if err != nil {
 		logger.Fatalf("error occurred while preparing apiconfig: %s", err.Error())
-		return
 	}
 	dbConfig, err := app.NewDBConfig()
 	if err != nil {
 		logger.Fatalf("error occurred while preparing dbconfig: %s", err.Error())
-		return
 	}
 
 	resource, err := resources.NewResource(dbConfig, logger)
 	if err != nil {
 		logger.Fatalf("error occurred while creating new resource: %s", err.Error())
-		return
 	}
 	defer resource.Db.Close()
 
 	grpcClientConn, err := InitGRPC(apiConfig)
 	if err != nil {
 		logger.Fatalf("error occurred while connecting to GRPC server: %s", err.Error())
-		return
 	}
 	defer grpcClientConn.Close()
 

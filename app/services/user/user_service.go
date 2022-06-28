@@ -35,12 +35,16 @@ type IUserService interface {
 
 type UserService struct {
 	resource     resources.IResource
-	orderService *order.OrderService
+	orderService order.IOrderService
 	apiConfig    *app.APIConfig
 	logger       *zap.SugaredLogger
 }
 
-func NewUserService(resource resources.IResource, orderService *order.OrderService, apiConfig *app.APIConfig, logger *zap.SugaredLogger) *UserService {
+func NewUserService(
+	resource resources.IResource,
+	orderService order.IOrderService,
+	apiConfig *app.APIConfig,
+	logger *zap.SugaredLogger) *UserService {
 	return &UserService{resource: resource, orderService: orderService, apiConfig: apiConfig, logger: logger}
 }
 
@@ -51,7 +55,8 @@ type TokenClaims struct {
 
 func (s *UserService) SignUp(ctx context.Context, user *models.User) (int, error) {
 	if _, err := s.resource.GetUserIDByPhone(ctx, user.PhoneNumber); err == nil {
-		return 0, errors.Wrapf(apperrors.ErrPhoneNumberIsAlreadyTaken, "error occurred while verifying phone number: %s", err.Error())
+		return 0, errors.Wrapf(apperrors.ErrPhoneNumberIsAlreadyTaken,
+			"error occurred while verifying phone number: %s", err.Error())
 	}
 
 	user.Password = generatePasswordHash(user.Password)
@@ -97,7 +102,7 @@ func (s *UserService) GetUserRating(ctx context.Context, id int) (float32, error
 }
 
 func (s *UserService) SetDriverRating(ctx context.Context, rating int) error {
-	_, err := s.orderService.SetDriverRating(ctx, order.SetDriverRatingRequestConvert(int32(rating)))
+	err := s.orderService.SetDriverRating(ctx, rating)
 	if err != nil {
 		return errors.Wrap(err, "error occurred while setting driver rating")
 	}
@@ -111,12 +116,10 @@ func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]string, er
 		return nil, errors.Wrap(err, "error occurred while getting user UUID")
 	}
 
-	ordersResponse, err := s.orderService.GetOrderHistory(ctx, order.GetOrderHistoryRequestConvert(uuid.String()))
+	orderHistory, err := s.orderService.GetOrderHistory(ctx, uuid)
 	if err != nil {
 		return nil, errors.Wrap(err, "error occurred while getting orders history from grpc server")
 	}
-
-	orderHistory := order.GRPCOrdersConvert(ordersResponse.Orders)
 
 	return orderHistory, nil
 }
@@ -127,12 +130,12 @@ func (s *UserService) FindTaxi(ctx context.Context, id int, origin, destination,
 		return "", 0, errors.Wrap(err, "error occurred while getting user UUID and rating")
 	}
 
-	driverInfo, err := s.orderService.GetTaxiForUser(ctx, order.GetTaxiRequestConvert(rating, userUUID.String(), origin, destination, taxiType))
+	driverUUID, driverRating, err := s.orderService.GetTaxiForUser(ctx, userUUID, rating, origin, destination, taxiType)
 	if err != nil {
 		return "", 0, errors.Wrap(err, "error occurred while finding taxi for user")
 	}
 
-	return driverInfo.GetDriverUuid(), driverInfo.GetDriverRating(), nil
+	return driverUUID, driverRating, nil
 }
 
 func generatePasswordHash(password string) string {
