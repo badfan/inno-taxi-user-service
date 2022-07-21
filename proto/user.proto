@@ -58,6 +58,10 @@ message Order {
 
 message EmptyResponse {}
 
+service UserService {
+  rpc SetUserRating (SetUserRatingRequest) returns (EmptyResponse) {}
+}
+
 service OrderService {
   rpc SetDriverRating (SetDriverRatingRequest) returns (EmptyResponse) {}
   rpc SetUserRating (SetUserRatingRequest) returns (EmptyResponse) {}

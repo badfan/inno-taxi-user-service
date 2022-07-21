@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 
 	"github.com/badfan/inno-taxi-user-service/app/rpc"
+	"github.com/google/uuid"
 )
 
 type IOrderService interface {
@@ -17,20 +17,21 @@ type IOrderService interface {
 }
 
 type OrderService struct {
-	Client rpc.OrderServiceClient
+	rpcService         rpc.IRPCService
+	orderServiceClient rpc.OrderServiceClient
 }
 
-func NewOrderService(conn *grpc.ClientConn) *OrderService {
-	return &OrderService{Client: rpc.NewOrderServiceClient(conn)}
+func NewOrderService(rpcService rpc.IRPCService, orderClientConn *grpc.ClientConn) *OrderService {
+	return &OrderService{rpcService: rpcService, orderServiceClient: rpc.NewOrderServiceClient(orderClientConn)}
 }
 
 func (s *OrderService) SetDriverRating(ctx context.Context, rating int) error {
-	_, err := s.Client.SetDriverRating(ctx, &rpc.SetDriverRatingRequest{Rating: int32(rating)})
+	_, err := s.orderServiceClient.SetDriverRating(ctx, &rpc.SetDriverRatingRequest{Rating: int32(rating)})
 	return err
 }
 
 func (s *OrderService) GetOrderHistory(ctx context.Context, uuid uuid.UUID) ([]string, error) {
-	ordersResponse, err := s.Client.GetOrderHistory(ctx, &rpc.GetOrderHistoryRequest{Uuid: uuid.String()})
+	ordersResponse, err := s.orderServiceClient.GetOrderHistory(ctx, &rpc.GetOrderHistoryRequest{Uuid: uuid.String()})
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +47,7 @@ func (s *OrderService) GetTaxiForUser(
 	rating float32,
 	origin, destination, taxiType string) (string, float32, error) {
 
-	driverInfo, err := s.Client.GetTaxiForUser(ctx,
+	driverInfo, err := s.orderServiceClient.GetTaxiForUser(ctx,
 		&rpc.GetTaxiForUserRequest{
 			UserUuid:    uuid.String(),
 			Origin:      origin,

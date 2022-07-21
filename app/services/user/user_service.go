@@ -118,7 +118,7 @@ func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]string, er
 
 	orderHistory, err := s.orderService.GetOrderHistory(ctx, uuid)
 	if err != nil {
-		return nil, errors.Wrap(err, "error occurred while getting orders history from grpc server")
+		return nil, errors.Wrap(err, "error occurred while getting orders history from rpcserver server")
 	}
 
 	return orderHistory, nil

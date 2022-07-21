@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"time"
+
+	"github.com/badfan/inno-taxi-user-service/app/rpc"
 
 	"github.com/badfan/inno-taxi-user-service/app/services/order"
 
@@ -59,11 +62,28 @@ func InitRouter(handler *handlers.Handler) *gin.Engine {
 	return router
 }
 
-func InitGRPC(apiConfig *app.APIConfig) (*grpc.ClientConn, error) {
+func InitGRPCClient(apiConfig *app.APIConfig, logger *zap.SugaredLogger) *grpc.ClientConn {
 	var options []grpc.DialOption
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-	return grpc.Dial("localhost:"+apiConfig.RPCPort, options...)
+	orderClientConn, err := grpc.Dial("localhost:"+apiConfig.RPCOrderPort, options...)
+	if err != nil {
+		logger.Fatalf("error occurred while connecting to order GRPC server: %s", err.Error())
+	}
+
+	return orderClientConn
+}
+
+func InitGRPCServer(rpcService *rpc.RPCService, apiConfig *app.APIConfig, logger *zap.SugaredLogger) {
+	listener, err := net.Listen("tcp", "localhost:"+apiConfig.RPCUserPort)
+	if err != nil {
+		logger.Fatalf("failed to up user GRPC server: %s", err.Error())
+	}
+
+	var options []grpc.ServerOption
+	rpcServer := grpc.NewServer(options...)
+	rpc.RegisterUserServiceServer(rpcServer, rpcService.UserServiceServer)
+	rpcServer.Serve(listener)
 }
 
 func main() {
@@ -85,13 +105,13 @@ func main() {
 	}
 	defer resource.Db.Close()
 
-	grpcClientConn, err := InitGRPC(apiConfig)
-	if err != nil {
-		logger.Fatalf("error occurred while connecting to GRPC server: %s", err.Error())
-	}
-	defer grpcClientConn.Close()
+	orderClientConn := InitGRPCClient(apiConfig, logger)
+	defer orderClientConn.Close()
 
-	orderService := order.NewOrderService(grpcClientConn)
+	rpcService := rpc.NewRPCService()
+	InitGRPCServer(rpcService, apiConfig, logger)
+
+	orderService := order.NewOrderService(rpcService, orderClientConn)
 	authService := auth.NewAuthenticationService(resource, logger)
 	userService := user.NewUserService(resource, orderService, apiConfig, logger)
 	handler := handlers.NewHandler(authService, userService, logger)
