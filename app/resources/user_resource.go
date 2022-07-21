@@ -3,6 +3,8 @@ package resources
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/badfan/inno-taxi-user-service/app/models"
 	"github.com/badfan/inno-taxi-user-service/app/models/sqlc"
 )
@@ -17,7 +19,6 @@ func (r *Resource) CreateUser(ctx context.Context, user *models.User) (int, erro
 		Password:    user.Password,
 	})
 	if err != nil {
-		r.logger.Errorf("error occured while creating user: %s", err.Error())
 		return 0, err
 	}
 
@@ -29,7 +30,6 @@ func (r *Resource) GetUserIDByPhone(ctx context.Context, phone string) (int, err
 
 	res, err := queries.GetUserIDByPhone(ctx, phone)
 	if err != nil {
-		r.logger.Infof("error occured while getting user's id by phone: %s", err.Error())
 		return 0, err
 	}
 
@@ -44,7 +44,6 @@ func (r *Resource) GetUserByPhoneAndPassword(ctx context.Context, phone, passwor
 		Password:    password,
 	})
 	if err != nil {
-		r.logger.Errorf("error occured while getting user by phone and password: %s", err.Error())
 		return nil, err
 	}
 
@@ -58,11 +57,32 @@ func (r *Resource) GetUserRatingByID(ctx context.Context, id int) (float32, erro
 
 	res, err := queries.GetUserRatingByID(ctx, int32(id))
 	if err != nil {
-		r.logger.Errorf("error occured while getting user's rating by id: %s", err.Error())
 		return 0, err
 	}
 
 	return res, err
+}
+
+func (r *Resource) GetUserUUIDByID(ctx context.Context, id int) (uuid.UUID, error) {
+	queries := sqlc.New(r.Db)
+
+	res, err := queries.GetUserUUIDByID(ctx, int32(id))
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+
+	return res, nil
+}
+
+func (r *Resource) GetUserUUIDAndRatingByID(ctx context.Context, id int) (uuid.UUID, float32, error) {
+	queries := sqlc.New(r.Db)
+
+	res, err := queries.GetUserUUIDAndRatingByID(ctx, int32(id))
+	if err != nil {
+		return uuid.UUID{}, 0, err
+	}
+
+	return res.UserUuid, res.UserRating, nil
 }
 
 func sqlcUserConvert(source *sqlc.User) *models.User {

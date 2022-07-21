@@ -1,0 +1,223 @@
+basePath: /
+consumes:
+- application/json
+host: localhost:8080
+info:
+  title: 'User-service Api:'
+  version: 0.0.1
+paths:
+  /sign-in/:
+    post:
+      description: Sign in
+      operationId: SignIn
+      parameters:
+      - in: body
+        name: Body
+        schema:
+          properties:
+            password:
+              type: string
+              x-go-name: Password
+            phone_number:
+              type: string
+              x-go-name: PhoneNumber
+          type: object
+      responses:
+        "200":
+          $ref: '#/responses/tokenResponse'
+        "404":
+          $ref: '#/responses/ErrorMsg'
+        "500":
+          $ref: '#/responses/ErrorMsg'
+      tags:
+      - user
+  /sign-up/:
+    post:
+      description: Sign up
+      operationId: SignUp
+      parameters:
+      - in: body
+        name: Body
+        schema:
+          properties:
+            email:
+              type: string
+              x-go-name: Email
+            name:
+              type: string
+              x-go-name: Name
+            password:
+              type: string
+              x-go-name: Password
+            phone_number:
+              type: string
+              x-go-name: PhoneNumber
+          type: object
+      responses:
+        "200":
+          $ref: '#/responses/idResponse'
+        "400":
+          $ref: '#/responses/ErrorMsg'
+        "500":
+          $ref: '#/responses/ErrorMsg'
+      tags:
+      - user
+  /user/api/v1/find-taxi/:
+    post:
+      description: Finding taxi
+      operationId: FindTaxi
+      parameters:
+      - in: body
+        name: Body
+        schema:
+          properties:
+            destination:
+              type: string
+              x-go-name: Destination
+            origin:
+              type: string
+              x-go-name: Origin
+            taxi_type:
+              type: string
+              x-go-name: TaxiType
+          type: object
+      responses:
+        "200":
+          $ref: '#/responses/findTaxiResponse'
+        "400":
+          $ref: '#/responses/ErrorMsg'
+        "404":
+          $ref: '#/responses/ErrorMsg'
+        "500":
+          $ref: '#/responses/ErrorMsg'
+      security:
+      - Bearer: []
+      tags:
+      - user
+  /user/api/v1/order-history/:
+    get:
+      description: Getting order history
+      operationId: GetOrderHistory
+      responses:
+        "200":
+          $ref: '#/responses/ordersResponse'
+        "500":
+          $ref: '#/responses/ErrorMsg'
+      security:
+      - Bearer: []
+      tags:
+      - user
+  /user/api/v1/rating/:
+    get:
+      description: Getting user rating
+      operationId: GetUserRating
+      responses:
+        "200":
+          $ref: '#/responses/ratingResponse'
+        "500":
+          $ref: '#/responses/ErrorMsg'
+      security:
+      - Bearer: []
+      tags:
+      - user
+  /user/api/v1/set-rating/:
+    post:
+      description: Setting driver rating
+      operationId: SetDriverRating
+      parameters:
+      - in: body
+        name: Body
+        schema:
+          properties:
+            driver_rating:
+              format: int64
+              type: integer
+              x-go-name: Rating
+          type: object
+      responses:
+        "200":
+          $ref: '#/responses/msgResponse'
+        "400":
+          $ref: '#/responses/ErrorMsg'
+        "500":
+          $ref: '#/responses/ErrorMsg'
+      security:
+      - Bearer: []
+      tags:
+      - user
+produces:
+- application/json
+responses:
+  ErrorMsg:
+    description: ""
+    schema:
+      properties:
+        message:
+          type: string
+          x-go-name: Message
+      type: object
+  findTaxiResponse:
+    description: ""
+    schema:
+      properties:
+        driver_uuid:
+          type: string
+          x-go-name: DriverUUID
+        rating:
+          format: float
+          type: number
+          x-go-name: Rating
+      type: object
+  idResponse:
+    description: ""
+    schema:
+      properties:
+        id:
+          format: int64
+          type: integer
+          x-go-name: ID
+      type: object
+  msgResponse:
+    description: ""
+    schema:
+      properties:
+        message:
+          type: string
+          x-go-name: Message
+      type: object
+  ordersResponse:
+    description: ""
+    schema:
+      properties:
+        orders:
+          items:
+            type: string
+          type: array
+          x-go-name: Orders
+      type: object
+  ratingResponse:
+    description: ""
+    schema:
+      properties:
+        rating:
+          format: float
+          type: number
+          x-go-name: Rating
+      type: object
+  tokenResponse:
+    description: ""
+    schema:
+      properties:
+        token:
+          type: string
+          x-go-name: Token
+      type: object
+schemes:
+- http
+- https
+securityDefinitions:
+  Bearer:
+    in: header
+    name: authorization
+    type: apiKey
+swagger: "2.0"

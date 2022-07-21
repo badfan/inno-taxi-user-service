@@ -7,8 +7,10 @@ import (
 )
 
 type APIConfig struct {
-	APIPort  string
-	TokenTTL int
+	APIPort      string
+	RPCUserPort  string
+	RPCOrderPort string
+	TokenTTL     int
 }
 
 type DBConfig struct {
@@ -28,6 +30,16 @@ func NewAPIConfig() (*APIConfig, error) {
 		return nil, errors.New("env var APIPORT is empty")
 	}
 	res.APIPort = viper.GetString("APIPORT")
+
+	if !viper.IsSet("RPCUSERPORT") {
+		return nil, errors.New("env var RPCUSERPORT is empty")
+	}
+	res.RPCUserPort = viper.GetString("RPCUSERPORT")
+
+	if !viper.IsSet("RPCORDERPORT") {
+		return nil, errors.New("env var RPCORDERPORT is empty")
+	}
+	res.RPCOrderPort = viper.GetString("RPCORDERPORT")
 
 	if !viper.IsSet("TOKENTTL") {
 		return nil, errors.New("env var TOKENTTL is empty")

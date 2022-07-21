@@ -1,14 +1,18 @@
-package user //nolint:typecheck
+package user
 
 import (
 	"context"
 	"crypto/sha1"
-	"errors"
+	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/badfan/inno-taxi-user-service/app"
+	"github.com/badfan/inno-taxi-user-service/app/services/order"
 
+	"github.com/badfan/inno-taxi-user-service/app/apperrors"
+	"github.com/pkg/errors"
+
+	"github.com/badfan/inno-taxi-user-service/app"
 	"github.com/badfan/inno-taxi-user-service/app/models"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
 	"github.com/dgrijalva/jwt-go" //nolint:typecheck
@@ -24,16 +28,24 @@ type IUserService interface {
 	SignUp(ctx context.Context, user *models.User) (int, error)
 	SignIn(ctx context.Context, phone, password string) (string, error)
 	GetUserRating(ctx context.Context, id int) (float32, error)
+	SetDriverRating(ctx context.Context, rating int) error
+	GetOrderHistory(ctx context.Context, id int) ([]string, error)
+	FindTaxi(ctx context.Context, id int, origin, destination, taxiType string) (string, float32, error)
 }
 
 type UserService struct {
-	resource  resources.IResource
-	apiConfig *app.APIConfig
-	logger    *zap.SugaredLogger
+	resource     resources.IResource
+	orderService order.IOrderService
+	apiConfig    *app.APIConfig
+	logger       *zap.SugaredLogger
 }
 
-func NewUserService(resource resources.IResource, apiConfig *app.APIConfig, logger *zap.SugaredLogger) *UserService {
-	return &UserService{resource: resource, apiConfig: apiConfig, logger: logger}
+func NewUserService(
+	resource resources.IResource,
+	orderService order.IOrderService,
+	apiConfig *app.APIConfig,
+	logger *zap.SugaredLogger) *UserService {
+	return &UserService{resource: resource, orderService: orderService, apiConfig: apiConfig, logger: logger}
 }
 
 type TokenClaims struct {
@@ -43,14 +55,15 @@ type TokenClaims struct {
 
 func (s *UserService) SignUp(ctx context.Context, user *models.User) (int, error) {
 	if _, err := s.resource.GetUserIDByPhone(ctx, user.PhoneNumber); err == nil {
-		return 0, errors.New("phone number is already taken")
+		return 0, errors.Wrapf(apperrors.ErrPhoneNumberIsAlreadyTaken,
+			"error occurred while verifying phone number: %s", err.Error())
 	}
 
 	user.Password = generatePasswordHash(user.Password)
 
 	res, err := s.resource.CreateUser(ctx, user)
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrapf(err, "error occurred while creating user")
 	}
 
 	return res, err
@@ -61,7 +74,11 @@ func (s *UserService) SignIn(ctx context.Context, phone, password string) (strin
 
 	user, err := s.resource.GetUserByPhoneAndPassword(ctx, phone, password)
 	if err != nil {
-		return "", err
+		if err == sql.ErrNoRows {
+			return "", errors.Wrapf(apperrors.ErrUserNotFound,
+				"error occurred while verifying phone number and password: %s", err.Error())
+		}
+		return "", errors.Wrap(err, "error occurred while verifying phone number and password")
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &TokenClaims{ //nolint:typecheck
@@ -76,7 +93,49 @@ func (s *UserService) SignIn(ctx context.Context, phone, password string) (strin
 }
 
 func (s *UserService) GetUserRating(ctx context.Context, id int) (float32, error) {
-	return s.resource.GetUserRatingByID(ctx, id)
+	user, err := s.resource.GetUserRatingByID(ctx, id)
+	if err != nil {
+		return 0, errors.Wrap(err, "error occurred while getting user rating")
+	}
+
+	return user, nil
+}
+
+func (s *UserService) SetDriverRating(ctx context.Context, rating int) error {
+	err := s.orderService.SetDriverRating(ctx, rating)
+	if err != nil {
+		return errors.Wrap(err, "error occurred while setting driver rating")
+	}
+
+	return nil
+}
+
+func (s *UserService) GetOrderHistory(ctx context.Context, id int) ([]string, error) {
+	uuid, err := s.resource.GetUserUUIDByID(ctx, id)
+	if err != nil {
+		return nil, errors.Wrap(err, "error occurred while getting user UUID")
+	}
+
+	orderHistory, err := s.orderService.GetOrderHistory(ctx, uuid)
+	if err != nil {
+		return nil, errors.Wrap(err, "error occurred while getting orders history from rpcserver server")
+	}
+
+	return orderHistory, nil
+}
+
+func (s *UserService) FindTaxi(ctx context.Context, id int, origin, destination, taxiType string) (string, float32, error) {
+	userUUID, rating, err := s.resource.GetUserUUIDAndRatingByID(ctx, id)
+	if err != nil {
+		return "", 0, errors.Wrap(err, "error occurred while getting user UUID and rating")
+	}
+
+	driverUUID, driverRating, err := s.orderService.GetTaxiForUser(ctx, userUUID, rating, origin, destination, taxiType)
+	if err != nil {
+		return "", 0, errors.Wrap(err, "error occurred while finding taxi for user")
+	}
+
+	return driverUUID, driverRating, nil
 }
 
 func generatePasswordHash(password string) string {

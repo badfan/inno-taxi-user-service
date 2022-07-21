@@ -1,10 +1,12 @@
 package auth //nolint:typecheck
 
 import (
-	"errors"
+	"github.com/badfan/inno-taxi-user-service/app/apperrors"
+	"github.com/pkg/errors"
+
+	"github.com/badfan/inno-taxi-user-service/app/services/user"
 
 	"github.com/badfan/inno-taxi-user-service/app/resources"
-	"github.com/badfan/inno-taxi-user-service/app/services/user"
 	"github.com/dgrijalva/jwt-go" //nolint:typecheck
 	"go.uber.org/zap"
 )
@@ -25,18 +27,18 @@ func NewAuthenticationService(resource resources.IResource, logger *zap.SugaredL
 func (s *AuthenticationService) ParseToken(accessToken string) (int, error) {
 	token, err := jwt.ParseWithClaims(accessToken, &user.TokenClaims{}, func(token *jwt.Token) (interface{}, error) { //nolint:typecheck
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
+			return nil, errors.Wrap(apperrors.ErrInvalidToken, "invalid signing method")
 		}
 
 		return []byte(user.SigningKey), nil
 	})
 	if err != nil {
-		return 0, err
+		return 0, errors.Wrapf(apperrors.ErrInvalidToken, "error occurred while parsing token: %s", err.Error())
 	}
 
 	claims, ok := token.Claims.(*user.TokenClaims)
 	if !ok {
-		return 0, errors.New("token claims are not of type *tokenClaims")
+		return 0, errors.Wrap(apperrors.ErrInvalidToken, "token claims are not of type *tokenClaims")
 	}
 
 	return int(claims.ID), nil

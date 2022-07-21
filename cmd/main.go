@@ -2,8 +2,17 @@ package main
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"time"
+
+	"github.com/badfan/inno-taxi-user-service/app/rpc"
+
+	"github.com/badfan/inno-taxi-user-service/app/services/order"
+
+	"github.com/badfan/inno-taxi-user-service/app/services/user"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/badfan/inno-taxi-user-service/app"
 
@@ -12,7 +21,6 @@ import (
 	"github.com/badfan/inno-taxi-user-service/app/handlers"
 	"github.com/badfan/inno-taxi-user-service/app/resources"
 	"github.com/badfan/inno-taxi-user-service/app/services/auth"
-	"github.com/badfan/inno-taxi-user-service/app/services/user"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -54,33 +62,64 @@ func InitRouter(handler *handlers.Handler) *gin.Engine {
 	return router
 }
 
+func InitGRPCClient(apiConfig *app.APIConfig, logger *zap.SugaredLogger) *grpc.ClientConn {
+	var options []grpc.DialOption
+	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	orderClientConn, err := grpc.Dial("localhost:"+apiConfig.RPCOrderPort, options...)
+	if err != nil {
+		logger.Fatalf("error occurred while connecting to order GRPC server: %s", err.Error())
+	}
+
+	return orderClientConn
+}
+
+func InitGRPCServer(rpcService *rpc.RPCService, apiConfig *app.APIConfig, logger *zap.SugaredLogger) {
+	listener, err := net.Listen("tcp", "localhost:"+apiConfig.RPCUserPort)
+	if err != nil {
+		logger.Fatalf("failed to up user GRPC server: %s", err.Error())
+	}
+
+	var options []grpc.ServerOption
+	rpcServer := grpc.NewServer(options...)
+	rpc.RegisterUserServiceServer(rpcServer, rpcService.UserServiceServer)
+	rpcServer.Serve(listener)
+}
+
 func main() {
 	logger := InitLogger()
 	defer logger.Sync()
 
 	apiConfig, err := app.NewAPIConfig()
 	if err != nil {
-		logger.Errorf("apiconfig error: %s", err.Error())
+		logger.Fatalf("error occurred while preparing apiconfig: %s", err.Error())
 	}
 	dbConfig, err := app.NewDBConfig()
 	if err != nil {
-		logger.Errorf("dbconfig error: %s", err.Error())
+		logger.Fatalf("error occurred while preparing dbconfig: %s", err.Error())
 	}
 
 	resource, err := resources.NewResource(dbConfig, logger)
 	if err != nil {
-		logger.Fatalf("db error: %s", err.Error())
+		logger.Fatalf("error occurred while creating new resource: %s", err.Error())
 	}
 	defer resource.Db.Close()
 
+	orderClientConn := InitGRPCClient(apiConfig, logger)
+	defer orderClientConn.Close()
+
+	rpcService := rpc.NewRPCService()
+	InitGRPCServer(rpcService, apiConfig, logger)
+
+	orderService := order.NewOrderService(rpcService, orderClientConn)
 	authService := auth.NewAuthenticationService(resource, logger)
-	userService := user.NewUserService(resource, apiConfig, logger)
+	userService := user.NewUserService(resource, orderService, apiConfig, logger)
 	handler := handlers.NewHandler(authService, userService, logger)
 
 	router := InitRouter(handler)
 
 	server := new(Server)
 	if err := server.Run(router, apiConfig.APIPort); err != nil {
-		logger.Fatalf("error occured while running http server: %s", err.Error())
+		logger.Fatalf("error occurred while running http server: %s", err.Error())
 	}
 }
